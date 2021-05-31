@@ -13,6 +13,8 @@
 #define DRIVER_KEY			"filter-driver"
 #define MODEL_KEY			"filter-model"
 #define ID_KEY				"filter-id"
+#define FREQUENCY_KEY		"frequency"
+#define GAIN_KEY			"gain"
 
 #define FFT_WINDOW_TYPE_KEY	"fft-window-type"
 
@@ -33,11 +35,17 @@ Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 		_idFilter,
 		(ID_KEY, "Filter for the device-id", ""))
 Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
-		_version,
-		({"v", "version"}, "Display the program version"))
+		_frequency,
+		({"f", "frequency"}, "Center-frequencty to tune to", "1420406000"))
 Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 		_fftWindow,
 		({"w", "fft-window-type"}, "Window-type for FFT", "hamming"))
+Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
+		_gain,
+		({"g", "gain"}, "Gain to apply"))
+Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
+		_version,
+		({"v", "version"}, "Display the program version"))
 
 Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 		_listAntennas,
@@ -56,8 +64,10 @@ Config::Config()
 	{
 	_parser.setApplicationDescription("Seti scanning daemon");
 	_parser.addOption(*_driverFilter);
-	_parser.addOption(*_help);
 	_parser.addOption(*_idFilter);
+	_parser.addOption(*_frequency);
+	_parser.addOption(*_gain);
+	_parser.addOption(*_help);
 	_parser.addOption(*_listAntennas);
 	_parser.addOption(*_listFrequencies);
 	_parser.addOption(*_listGains);
@@ -129,6 +139,37 @@ int Config::radioIdFilter(void)
 	s.endGroup();
 	return filter.toInt();
 	}
+
+/******************************************************************************\
+|* Get the frequency to tune to
+\******************************************************************************/
+int Config::centerFrequency(void)
+	{
+	if (_parser.isSet(*_frequency))
+		return _parser.value(*_frequency).toInt();
+
+	QSettings s;
+	s.beginGroup(RADIO_GROUP);
+	QString freq = s.value(FREQUENCY_KEY, "1420406000").toString();
+	s.endGroup();
+	return freq.toInt();
+	}
+
+/******************************************************************************\
+|* Get the gain to apply
+\******************************************************************************/
+int Config::gain(void)
+	{
+	if (_parser.isSet(*_gain))
+		return _parser.value(*_gain).toInt();
+
+	QSettings s;
+	s.beginGroup(RADIO_GROUP);
+	QString gain = s.value(GAIN_KEY, "40").toString();
+	s.endGroup();
+	return gain.toInt();
+	}
+
 
 /******************************************************************************\
 |* Get the fft-windowing function

@@ -30,6 +30,29 @@ class Config : public Singleton<Config>
 		explicit Config();
 
 		/******************************************************************\
+		|* Return the FFT window type
+		\******************************************************************/
+		WindowType fftWindowType(void);
+
+		/******************************************************************\
+		|* Return the frequency to tune to
+		\******************************************************************/
+		int centerFrequency(void);
+
+		/******************************************************************\
+		|* Return the gain to apply
+		\******************************************************************/
+		int gain(void);
+
+		/******************************************************************\
+		|* Return whether to list out criteria. These are only on the
+		|* commandline
+		\******************************************************************/
+		bool listAntennas(void);
+		bool listGains(void);
+		bool listFrequencyRanges(void);
+
+		/******************************************************************\
 		|* Return the filter on the driver to select out the one we want
 		\******************************************************************/
 		QString radioDriverFilter(void);
@@ -44,18 +67,6 @@ class Config : public Singleton<Config>
 		\******************************************************************/
 		int radioIdFilter(void);
 
-		/******************************************************************\
-		|* Return the FFT window type
-		\******************************************************************/
-		WindowType fftWindowType(void);
-
-		/******************************************************************\
-		|* Return whether to list out criteria. These are only on the
-		|* commandline
-		\******************************************************************/
-		bool listAntennas(void);
-		bool listGains(void);
-		bool listFrequencyRanges(void);
 	};
 
 #endif // CONFIG_H
