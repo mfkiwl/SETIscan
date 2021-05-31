@@ -2,6 +2,7 @@
 
 #include "datamgr.h"
 #include "tester.h"
+#include "soapyio.h"
 
 int main(int argc, char *argv[])
 	{
@@ -13,5 +14,6 @@ int main(int argc, char *argv[])
 	tester.duts().append(&dmgr);
 	tester.test();
 
+	SoapyIO sio;
 	//return a.exec();
 	}

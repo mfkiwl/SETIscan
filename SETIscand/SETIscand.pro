@@ -18,6 +18,11 @@ SOURCES += \
         classes/tester.cc \
         main.cc
 
+LIBS += \
+        -L/usr/local/lib \
+        -lfftw3 \
+        -lSoapySDR
+
 # Default rules for deployment.
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
