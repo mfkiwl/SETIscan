@@ -9,7 +9,8 @@ CONFIG -= app_bundle
 
 INCLUDEPATH += \
         ../Shared/include \
-        classes
+		classes \
+		/usr/local/include
 
 SOURCES += \
         classes/datablock.cc \
