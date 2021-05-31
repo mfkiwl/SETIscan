@@ -10,7 +10,7 @@
 \******************************************************************************/
 #define ORG_NAME				"Moebius-Tech"
 #define ORG_DOMAIN				"moebius-tech.net"
-#define APP_NAME				"setiscan"
+#define APP_NAME				"SETIscan"
 #define APP_VERSION				"0.1"
 
 #define GUI_NAME				"setishow"
@@ -26,7 +26,7 @@
 |* Logging
 \******************************************************************************/
 Q_DECLARE_LOGGING_CATEGORY(log_plugin)
-Q_DECLARE_LOGGING_CATEGORY(log_core)
+Q_DECLARE_LOGGING_CATEGORY(log_dsp)
 Q_DECLARE_LOGGING_CATEGORY(log_net)
 Q_DECLARE_LOGGING_CATEGORY(log_gui)
 Q_DECLARE_LOGGING_CATEGORY(log_db)

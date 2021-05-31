@@ -13,6 +13,7 @@ INCLUDEPATH += \
 		/usr/local/include
 
 SOURCES += \
+        classes/config.cc \
         classes/datablock.cc \
         classes/datamgr.cc \
         classes/soapyio.cc \
@@ -34,6 +35,7 @@ HEADERS += \
     ../Shared/include/properties.h \
     ../Shared/include/singleton.h \
     ../Shared/include/testable.h \
+    classes/config.h \
     classes/datablock.h \
     classes/datamgr.h \
     classes/soapyio.h \
