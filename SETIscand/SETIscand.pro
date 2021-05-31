@@ -1,6 +1,6 @@
 QT -= gui
 
-CONFIG += c++11 console
+CONFIG += c++17 console
 CONFIG -= app_bundle
 
 # You can make your code fail to compile if it uses deprecated APIs.
@@ -14,6 +14,7 @@ INCLUDEPATH += \
 SOURCES += \
         classes/datablock.cc \
         classes/datamgr.cc \
+        classes/soapyio.cc \
         classes/tester.cc \
         main.cc
 
@@ -29,4 +30,5 @@ HEADERS += \
     ../Shared/include/testable.h \
     classes/datablock.h \
     classes/datamgr.h \
+    classes/soapyio.h \
     classes/tester.h
