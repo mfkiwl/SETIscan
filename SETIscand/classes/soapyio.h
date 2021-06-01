@@ -26,10 +26,14 @@ class SoapyIO : public QObject
 		/**************************************************************************\
 		|* Properties
 		\**************************************************************************/
+		GET(int, channel);
 		GET(SoapySDR::Device *, dev);
 		GET(StringList, antennas);
 		GET(SoapySDR::Range, gains);
 		GET(RangeList, frequencyRanges);
+		GET(RangeList, sampleRates);
+		GET(RangeList, bandwidths);
+		GET(QString, format);
 
 	private:
 		/**********************************************************************\
@@ -41,6 +45,7 @@ class SoapyIO : public QObject
 		\**********************************************************************/
 		void _findMatchingRadio(void);
 		void _getLists(void);
+		bool _inRange(double value, RangeList &ranges);
 
 
 	public:
@@ -48,6 +53,21 @@ class SoapyIO : public QObject
 		|* Constructor
 		\**********************************************************************/
 		explicit SoapyIO(QObject *parent = nullptr);
+
+		/**********************************************************************\
+		|* Set the sample rate in Hz, with a bounds check
+		\**********************************************************************/
+		bool setSampleRate(int sampleRate);
+
+		/**********************************************************************\
+		|* Set the frequency in Hx, with a bounds check
+		\**********************************************************************/
+		bool setFrequency(int frequency);
+
+		/**********************************************************************\
+		|* Set the gain in dB, with a bounds check
+		\**********************************************************************/
+		bool setGain(double gain);
 
 
 

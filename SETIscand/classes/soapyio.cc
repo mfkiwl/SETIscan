@@ -13,14 +13,16 @@
 \******************************************************************************/
 Q_LOGGING_CATEGORY(log_dsp, "seti.dsp   ")
 
-#define LOG qDebug(log_dsp) << QTime::currentTime().toString("hh:mm:ss.zzz")
-#define ERR qCritical(log_dsp) << QTime::currentTime().toString("hh:mm:ss.zzz")
+#define LOG  qDebug(log_dsp) << QTime::currentTime().toString("hh:mm:ss.zzz")
+#define WARN qWarning(log_dsp) << QTime::currentTime().toString("hh:mm:ss.zzz")
+#define ERR	 qCritical(log_dsp) << QTime::currentTime().toString("hh:mm:ss.zzz")
 
 /******************************************************************************\
 |* Constructor
 \******************************************************************************/
 SoapyIO::SoapyIO(QObject *parent)
 		:QObject(parent)
+		,_channel(0)
 		,_dev(nullptr)
 	{
 	SoapySDR::setLogLevel(SOAPY_SDR_CRITICAL);
@@ -29,9 +31,90 @@ SoapyIO::SoapyIO(QObject *parent)
 	if (_dev != nullptr)
 		{
 		_getLists();
+		setSampleRate(Config::instance().sampleRate());
+		setFrequency(Config::instance().centerFrequency());
+		setGain(Config::instance().gain());
 		}
 	}
 
+
+/******************************************************************************\
+|* Set the sample rate with a bounds check
+\******************************************************************************/
+bool SoapyIO::setSampleRate(int sampleRate)
+	{
+	QLocale l = QLocale::system();
+	bool ok = _inRange(sampleRate, _sampleRates);
+	if (ok)
+		{
+		_dev->setSampleRate(SOAPY_SDR_RX, _channel, sampleRate);
+		LOG << "Set sample rate to" << l.toString(sampleRate);
+
+		int realRate = (int)(_dev->getSampleRate(SOAPY_SDR_RX, _channel));
+		if (realRate != sampleRate)
+			{
+			QString msg = QString("Real sample rate (%1) differs from requested (%2)")
+					.arg(l.toString(realRate), l.toString(sampleRate));
+			WARN << msg;
+			}
+		}
+	else
+		WARN << "Sample rate " << sampleRate << "is outside of allowed ranges";
+	return ok;
+	}
+
+/******************************************************************************\
+|* Set the sample rate with a bounds check
+\******************************************************************************/
+bool SoapyIO::setFrequency(int frequency)
+	{
+	QLocale l = QLocale::system();
+
+	bool ok = _inRange(frequency, _frequencyRanges);
+	if (ok)
+		{
+		_dev->setFrequency(SOAPY_SDR_RX, _channel, frequency);
+		LOG << "Set frequency to" << l.toString(frequency);
+
+		int realFreq = (int)(_dev->getFrequency(SOAPY_SDR_RX, _channel));
+		if (realFreq != frequency)
+			{
+			QString msg = QString("Real frequency (%1) differs from requested (%2)")
+					.arg(l.toString(realFreq), l.toString(frequency));
+			WARN << msg;
+			}
+		}
+	else
+		WARN << "Frequency " << frequency << "is outside of allowed ranges";
+	return ok;
+	}
+
+/******************************************************************************\
+|* Set the sample rate with a bounds check
+\******************************************************************************/
+bool SoapyIO::setGain(double gain)
+	{
+	QLocale l = QLocale::system();
+
+	bool ok = ((gain >= _gains.minimum()) && (gain <= _gains.maximum()));
+	if (ok)
+		{
+		_dev->setGain(SOAPY_SDR_RX, _channel, gain);
+		LOG << "Set gain to" << l.toString(gain);
+
+		int realGain = (_dev->getGain(SOAPY_SDR_RX, _channel));
+		if (realGain != gain)
+			{
+			QString msg = QString("Real gain (%1) differs from requested (%2)")
+					.arg(l.toString(realGain), l.toString(gain));
+			WARN << msg;
+			}
+		}
+	else
+		WARN << "Gain " << gain << "is outside of allowed range";
+
+	return ok;
+	}
 
 /******************************************************************************\
 |* Determine the radio to use by probing and filtering the results
@@ -97,9 +180,12 @@ void SoapyIO::_findMatchingRadio(void)
 \******************************************************************************/
 void SoapyIO::_getLists(void)
 	{
-	_antennas			= _dev->listAntennas(SOAPY_SDR_RX, 0);
+	_antennas			= _dev->listAntennas(SOAPY_SDR_RX, _channel);
 	bool shouldExit		= false;
 
+	/**************************************************************************\
+	|* Antennas
+	\**************************************************************************/
 	if (Config::instance().listAntennas())
 		{
 		printf("Antennas");
@@ -110,22 +196,26 @@ void SoapyIO::_getLists(void)
 			comma = ',';
 			}
 		printf("\n");
-		fflush(stdout);
 		shouldExit = true;
 		}
 
-	_gains = _dev->getGainRange(SOAPY_SDR_RX, 0);
+	/**************************************************************************\
+	|* Gain range - this means all the gains in the device
+	\**************************************************************************/
+	_gains = _dev->getGainRange(SOAPY_SDR_RX, _channel);
 	if (Config::instance().listGains())
 		{
 		QLocale l = QLocale::system();
 		printf("Gains: {%s -> %s Db}\n",
 			   qPrintable(l.toString((int)_gains.minimum())),
 			   qPrintable(l.toString((int)_gains.maximum())));
-		fflush(stdout);
 		shouldExit = true;
 		}
 
-	_frequencyRanges	= _dev->getFrequencyRange(SOAPY_SDR_RX, 0);
+	/**************************************************************************\
+	|* Frequency ranges
+	\**************************************************************************/
+	_frequencyRanges	= _dev->getFrequencyRange(SOAPY_SDR_RX, _channel);
 	if (Config::instance().listFrequencyRanges())
 		{
 		QLocale l = QLocale::system();
@@ -140,10 +230,76 @@ void SoapyIO::_getLists(void)
 			comma = ',';
 			}
 		printf("\n");
-		fflush(stdout);
 		shouldExit = true;
 		}
 
+	/**************************************************************************\
+	|* Sample rates
+	\**************************************************************************/
+	_sampleRates = _dev->getSampleRateRange(SOAPY_SDR_RX, _channel);
+	if (Config::instance().listSampleRates())
+		{
+		QLocale l = QLocale::system();
+
+		printf("Sample rates");
+		char comma = ':';
+		for (SoapySDR::Range &range : _sampleRates)
+			{
+			printf("%c {%s -> %s Hz}", comma,
+				   qPrintable(l.toString((int)range.minimum())),
+				   qPrintable(l.toString((int)range.maximum())));
+			comma = ',';
+			}
+		printf("\n");
+		shouldExit = true;
+		}
+
+	/**************************************************************************\
+	|* Baseband bandwidths
+	\**************************************************************************/
+	_bandwidths = _dev->getBandwidthRange(SOAPY_SDR_RX, _channel);
+	if (Config::instance().listBandwidths())
+		{
+		QLocale l = QLocale::system();
+
+		printf("Bandwidths");
+		char comma = ':';
+		for (SoapySDR::Range &range : _bandwidths)
+			{
+			printf("%c {%s -> %s Hz}", comma,
+				   qPrintable(l.toString((int)range.minimum())),
+				   qPrintable(l.toString((int)range.maximum())));
+			comma = ',';
+			}
+		printf("\n");
+		shouldExit = true;
+		}
+
+
+	/**************************************************************************\
+	|* Stream format
+	\**************************************************************************/
+	double max;
+	_format = _dev->getNativeStreamFormat(SOAPY_SDR_RX, 0, max).c_str();
+	if (Config::instance().listNativeFormat())
+		{
+		printf("Native streaming format: %s\n", qPrintable(_format));
+		shouldExit = true;
+		}
+
+	fflush(stdout);
 	if (shouldExit)
 		::exit(0);
+	}
+
+/******************************************************************************\
+|* Figure out if a value lies within a range-set
+\******************************************************************************/
+bool SoapyIO::_inRange(double value, RangeList &ranges)
+	{
+	for (SoapySDR::Range& range : ranges)
+		if ((value >= range.minimum()) && (value <= range.maximum()))
+			return true;
+
+	return false;
 	}

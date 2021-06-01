@@ -42,7 +42,12 @@ class Config : public Singleton<Config>
 		/******************************************************************\
 		|* Return the gain to apply
 		\******************************************************************/
-		int gain(void);
+		double gain(void);
+
+		/******************************************************************\
+		|* Return the baseband sample rate to use
+		\******************************************************************/
+		int sampleRate(void);
 
 		/******************************************************************\
 		|* Return whether to list out criteria. These are only on the
@@ -51,6 +56,9 @@ class Config : public Singleton<Config>
 		bool listAntennas(void);
 		bool listGains(void);
 		bool listFrequencyRanges(void);
+		bool listSampleRates(void);
+		bool listBandwidths(void);
+		bool listNativeFormat(void);
 
 		/******************************************************************\
 		|* Return the filter on the driver to select out the one we want

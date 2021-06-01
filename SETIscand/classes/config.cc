@@ -13,8 +13,10 @@
 #define DRIVER_KEY			"filter-driver"
 #define MODEL_KEY			"filter-model"
 #define ID_KEY				"filter-id"
+
 #define FREQUENCY_KEY		"frequency"
 #define GAIN_KEY			"gain"
+#define SAMPLE_RATE_KEY		"sample-rate"
 
 #define FFT_WINDOW_TYPE_KEY	"fft-window-type"
 
@@ -44,6 +46,9 @@ Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 		_gain,
 		({"g", "gain"}, "Gain to apply"))
 Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
+		_sampleRate,
+		({"s", "sample-rate"}, "Baseband Sample rate", "2048000"))
+Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 		_version,
 		({"v", "version"}, "Display the program version"))
 
@@ -56,6 +61,15 @@ Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 		_listFrequencies,
 		("list-frequencies", "List frequency-ranges and exit"))
+Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
+		_listSampleRates,
+		("list-sample-rates", "List sample-rates and exit"))
+Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
+		_listBandwidths,
+		("list-bandwidths", "List baseband bandwidths and exit"))
+Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
+		_listNativeFormat,
+		("list-native-format", "List native streaming format and exit"))
 
 /******************************************************************************\
 |* Read configuration from both commandline and settings
@@ -69,9 +83,13 @@ Config::Config()
 	_parser.addOption(*_gain);
 	_parser.addOption(*_help);
 	_parser.addOption(*_listAntennas);
+	_parser.addOption(*_listBandwidths);
 	_parser.addOption(*_listFrequencies);
 	_parser.addOption(*_listGains);
+	_parser.addOption(*_listNativeFormat);
+	_parser.addOption(*_listSampleRates);
 	_parser.addOption(*_modeFilter);
+	_parser.addOption(*_sampleRate);
 	_parser.addOption(*_version);
 	_parser.addOption(*_fftWindow);
 
@@ -158,16 +176,31 @@ int Config::centerFrequency(void)
 /******************************************************************************\
 |* Get the gain to apply
 \******************************************************************************/
-int Config::gain(void)
+double Config::gain(void)
 	{
 	if (_parser.isSet(*_gain))
-		return _parser.value(*_gain).toInt();
+		return _parser.value(*_gain).toDouble();
 
 	QSettings s;
 	s.beginGroup(RADIO_GROUP);
 	QString gain = s.value(GAIN_KEY, "40").toString();
 	s.endGroup();
-	return gain.toInt();
+	return gain.toDouble();
+	}
+
+/******************************************************************************\
+|* Return the baseband sample rate to use
+\******************************************************************************/
+int Config::sampleRate(void)
+	{
+	if (_parser.isSet(*_sampleRate))
+		return _parser.value(*_sampleRate).toInt();
+
+	QSettings s;
+	s.beginGroup(RADIO_GROUP);
+	QString rate = s.value(SAMPLE_RATE_KEY, "2048000").toString();
+	s.endGroup();
+	return rate.toInt();
 	}
 
 
@@ -233,5 +266,29 @@ bool Config::listGains(void)
 bool Config::listFrequencyRanges(void)
 	{
 	return _parser.isSet(*_listFrequencies);
+	}
+
+/******************************************************************************\
+|* Get whether to list out the antennas
+\******************************************************************************/
+bool Config::listSampleRates(void)
+	{
+	return _parser.isSet(*_listSampleRates);
+	}
+
+/******************************************************************************\
+|* Get whether to list out the antennas
+\******************************************************************************/
+bool Config::listBandwidths(void)
+	{
+	return _parser.isSet(*_listBandwidths);
+	}
+
+/******************************************************************************\
+|* Get whether to list out the antennas
+\******************************************************************************/
+bool Config::listNativeFormat(void)
+	{
+	return _parser.isSet(*_listNativeFormat);
 	}
 
