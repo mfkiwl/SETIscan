@@ -23,13 +23,13 @@ int main(int argc, char *argv[])
 	\**************************************************************************/
 	Config &cfg = Config::instance();
 
-
+	/**************************************************************************\
+	|* Prevent copying data when transferring from thread to thread
+	\**************************************************************************/
 	DataMgr& dmgr = DataMgr::instance();
 
-	Tester tester;
-	tester.duts().append(&dmgr);
-	tester.test();
+	SoapyIO sio(&a);
+	sio.startWorker();
 
-	SoapyIO sio;
-	//return a.exec();
+	return a.exec();
 	}

@@ -17,6 +17,7 @@ SOURCES += \
         classes/datablock.cc \
         classes/datamgr.cc \
         classes/soapyio.cc \
+        classes/soapyworker.cc \
         classes/tester.cc \
         main.cc
 
@@ -39,4 +40,5 @@ HEADERS += \
     classes/datablock.h \
     classes/datamgr.h \
     classes/soapyio.h \
+    classes/soapyworker.h \
     classes/tester.h

@@ -1,6 +1,7 @@
 #include "config.h"
 #include "constants.h"
 #include "soapyio.h"
+#include "soapyworker.h"
 
 #include <QLocale>
 #include <SoapySDR/Logger.hpp>
@@ -24,6 +25,8 @@ SoapyIO::SoapyIO(QObject *parent)
 		:QObject(parent)
 		,_channel(0)
 		,_dev(nullptr)
+		,_thread(nullptr)
+		,_worker(nullptr)
 	{
 	SoapySDR::setLogLevel(SOAPY_SDR_CRITICAL);
 
@@ -37,6 +40,16 @@ SoapyIO::SoapyIO(QObject *parent)
 		}
 	}
 
+/******************************************************************************\
+|* Destructor
+\******************************************************************************/
+SoapyIO::~SoapyIO(void)
+	{
+	if (_thread != nullptr)
+		stopWorker();
+	if (_dev)
+		SoapySDR::Device::unmake(_dev);
+	}
 
 /******************************************************************************\
 |* Set the sample rate with a bounds check
@@ -114,6 +127,45 @@ bool SoapyIO::setGain(double gain)
 		WARN << "Gain " << gain << "is outside of allowed range";
 
 	return ok;
+	}
+
+
+/******************************************************************************\
+|* Start a worker going in the background, creating it if necessary
+\******************************************************************************/
+void SoapyIO::startWorker(void)
+	{
+	if (_worker == nullptr)
+		{
+		_thread = new QThread(this);
+		_worker = new SoapyWorker();
+		_worker->setSdr(this);
+
+		_worker->moveToThread(_thread);
+
+		connect(this, &SoapyIO::startWorkerSampling,
+				_worker, &SoapyWorker::startSampling);
+		connect(this, &SoapyIO::stopWorkerSampling,
+				_worker, &SoapyWorker::stopSampling);
+		connect(_thread, &QThread::finished,
+				_worker, &QObject::deleteLater);
+		_thread->start();
+
+		emit startWorkerSampling();
+		}
+	}
+
+/******************************************************************************\
+|* Kill off the background thread
+\******************************************************************************/
+void SoapyIO::stopWorker(void)
+	{
+	if (_worker != nullptr)
+		{
+		emit stopWorkerSampling();
+		_thread->quit();
+		_thread->wait();
+		}
 	}
 
 /******************************************************************************\

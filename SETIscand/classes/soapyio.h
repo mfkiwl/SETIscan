@@ -5,12 +5,15 @@
 #include <vector>
 
 #include <QObject>
+#include <QThread>
 
 #include <SoapySDR/Device.hpp>
 #include <SoapySDR/Types.hpp>
 #include <SoapySDR/Formats.hpp>
 
 #include "properties.h"
+
+QT_FORWARD_DECLARE_CLASS(SoapyWorker)
 
 class SoapyIO : public QObject
 	{
@@ -39,6 +42,8 @@ class SoapyIO : public QObject
 		/**********************************************************************\
 		|* Private variables
 		\**********************************************************************/
+		QThread *		_thread;			// Thread to tidy up later
+		SoapyWorker *	_worker;			// Worker or nullptr
 
 		/**********************************************************************\
 		|* Private methods
@@ -53,6 +58,7 @@ class SoapyIO : public QObject
 		|* Constructor
 		\**********************************************************************/
 		explicit SoapyIO(QObject *parent = nullptr);
+		~SoapyIO(void);
 
 		/**********************************************************************\
 		|* Set the sample rate in Hz, with a bounds check
@@ -69,7 +75,18 @@ class SoapyIO : public QObject
 		\**********************************************************************/
 		bool setGain(double gain);
 
+		/**********************************************************************\
+		|* Start/Stop a worker sampling, creating it if necessary
+		\**********************************************************************/
+		void startWorker(void);
+		void stopWorker(void);
 
+	signals:
+		/**********************************************************************\
+		|* Start/Stop a worker sampling
+		\**********************************************************************/
+		void startWorkerSampling(void);
+		void stopWorkerSampling(void);
 
 	};
 
