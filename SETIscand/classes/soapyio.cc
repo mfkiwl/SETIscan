@@ -51,7 +51,10 @@ SoapyIO::~SoapyIO(void)
 	if (_thread != nullptr)
 		stopWorker();
 	if (_rx)
+		{
 		_dev->deactivateStream(_rx, 0, 0);
+		_dev->closeStream(_rx);
+		}
 	if (_dev)
 		SoapySDR::Device::unmake(_dev);
 	}
