@@ -2,6 +2,7 @@
 #define SOAPYWORKER_H
 
 #include <QObject>
+#include <SoapySDR/Device.hpp>
 
 #include "properties.h"
 QT_FORWARD_DECLARE_CLASS(SoapyIO)
@@ -14,6 +15,9 @@ class SoapyWorker : public QObject
 	|* Properties
 	\**************************************************************************/
 	GETSET(SoapyIO*, sdr, Sdr);
+	GET(bool, isActive);
+
+	private:
 
 	/**************************************************************************\
 	|* Public methods

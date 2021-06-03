@@ -1,6 +1,8 @@
 #ifndef DATAMGR_H
 #define DATAMGR_H
 
+#include <complex>
+
 #include <QMutexLocker>
 #include <QVector>
 
@@ -37,10 +39,16 @@ class DataMgr : public Singleton<DataMgr>, public Testable
 		/**********************************************************************\
 		|* Public Methods - return a pointer to the data in a given block
 		\**********************************************************************/
-		uint8_t * asUint8(int idx);
-		int *	  asInt(int idx);
-		float *   asFloat(int idx);
-		double *  asDouble(int idx);
+		uint8_t *				asUint8(int idx);
+		int8_t *				asInt8(int idx);
+		uint16_t *				asUint16(int idx);
+		int16_t *				asInt16(int idx);
+		uint32_t *				asUint32(int idx);
+		int32_t *				asInt32(int idx);
+		float *					asFloat(int idx);
+		double *				asDouble(int idx);
+		std::complex<float> *	asComplexFloat(int idx);
+		std::complex<double> *	asComplexDouble(int idx);
 
 		/**********************************************************************\
 		|* Public Methods - interface for retain counts from client side

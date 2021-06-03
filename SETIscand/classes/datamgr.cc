@@ -102,9 +102,55 @@ uint8_t * DataMgr::asUint8(int idx)
 	}
 
 /******************************************************************************\
-|* Return the pointer to the data in various formats: as double
+|* Return the pointer to the data in various formats: as int8_t
 \******************************************************************************/
-int * DataMgr::asInt(int idx)
+int8_t * DataMgr::asInt8(int idx)
+	{
+	QMutexLocker guard(&_lock);
+
+	if ((idx < 0) || (idx >= _active.size()))
+		{
+		ERR << "Requested int8_t data for OOB index " << idx;
+		return nullptr;
+		}
+	return reinterpret_cast<int8_t *>(_active[idx]->data());
+	}
+
+
+/******************************************************************************\
+|* Return the pointer to the data in various formats: as uint16_t
+\******************************************************************************/
+uint16_t * DataMgr::asUint16(int idx)
+	{
+	QMutexLocker guard(&_lock);
+
+	if ((idx < 0) || (idx >= _active.size()))
+		{
+		ERR << "Requested uint16_t data for OOB index " << idx;
+		return nullptr;
+		}
+	return reinterpret_cast<uint16_t *>(_active[idx]->data());
+	}
+
+/******************************************************************************\
+|* Return the pointer to the data in various formats: as int16_t
+\******************************************************************************/
+int16_t * DataMgr::asInt16(int idx)
+	{
+	QMutexLocker guard(&_lock);
+
+	if ((idx < 0) || (idx >= _active.size()))
+		{
+		ERR << "Requested uint8_t data for OOB index " << idx;
+		return nullptr;
+		}
+	return reinterpret_cast<int16_t *>(_active[idx]->data());
+	}
+
+/******************************************************************************\
+|* Return the pointer to the data in various formats: as uint32_t
+\******************************************************************************/
+uint32_t * DataMgr::asUint32(int idx)
 	{
 	QMutexLocker guard(&_lock);
 
@@ -113,7 +159,22 @@ int * DataMgr::asInt(int idx)
 		ERR << "Requested int data for OOB index " << idx;
 		return nullptr;
 		}
-	return reinterpret_cast<int *>(_active[idx]->data());
+	return reinterpret_cast<uint32_t *>(_active[idx]->data());
+	}
+
+/******************************************************************************\
+|* Return the pointer to the data in various formats: as int32_t
+\******************************************************************************/
+int32_t * DataMgr::asInt32(int idx)
+	{
+	QMutexLocker guard(&_lock);
+
+	if ((idx < 0) || (idx >= _active.size()))
+		{
+		ERR << "Requested int data for OOB index " << idx;
+		return nullptr;
+		}
+	return reinterpret_cast<int32_t *>(_active[idx]->data());
 	}
 
 /******************************************************************************\
@@ -144,6 +205,36 @@ double * DataMgr::asDouble(int idx)
 		return nullptr;
 		}
 	return reinterpret_cast<double *>(_active[idx]->data());
+	}
+
+/******************************************************************************\
+|* Return the pointer to the data in various formats: as complex float
+\******************************************************************************/
+std::complex<float> * DataMgr::asComplexFloat(int idx)
+	{
+	QMutexLocker guard(&_lock);
+
+	if ((idx < 0) || (idx >= _active.size()))
+		{
+		ERR << "Requested double data for OOB index " << idx;
+		return nullptr;
+		}
+	return reinterpret_cast<std::complex<float> *>(_active[idx]->data());
+	}
+
+/******************************************************************************\
+|* Return the pointer to the data in various formats: as complex double
+\******************************************************************************/
+std::complex<double> * DataMgr::asComplexDouble(int idx)
+	{
+	QMutexLocker guard(&_lock);
+
+	if ((idx < 0) || (idx >= _active.size()))
+		{
+		ERR << "Requested double data for OOB index " << idx;
+		return nullptr;
+		}
+	return reinterpret_cast<std::complex<double> *>(_active[idx]->data());
 	}
 
 

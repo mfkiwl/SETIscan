@@ -35,6 +35,7 @@ class SoapyIO : public QObject
 		GET(SoapySDR::Range, gains);
 		GET(RangeList, frequencyRanges);
 		GET(RangeList, sampleRates);
+		GET(int, sampleRate);
 		GET(RangeList, bandwidths);
 		GET(QString, format);
 
@@ -42,8 +43,9 @@ class SoapyIO : public QObject
 		/**********************************************************************\
 		|* Private variables
 		\**********************************************************************/
-		QThread *		_thread;			// Thread to tidy up later
-		SoapyWorker *	_worker;			// Worker or nullptr
+		QThread *			_thread;			// Thread to tidy up later
+		SoapyWorker *		_worker;			// Worker or nullptr
+		SoapySDR::Stream *	_rx;				// Receiving-data stream
 
 		/**********************************************************************\
 		|* Private methods
@@ -80,6 +82,30 @@ class SoapyIO : public QObject
 		\**********************************************************************/
 		void startWorker(void);
 		void stopWorker(void);
+
+		/**********************************************************************\
+		|* Return a set-up stream
+		\**********************************************************************/
+		SoapySDR::Stream * rxStream(void);
+
+		/**********************************************************************\
+		|* Shim around the readStream call
+		\**********************************************************************/
+		int waitForData(SoapySDR::Stream *stream,
+						void * const *buffers,
+						int elems,
+						int &flags,
+						long long ns,
+						const long timeoutUs=100000);
+
+		/**********************************************************************\
+		|* Stream characteristics
+		\**********************************************************************/
+		bool isComplexStream(void);
+		bool isFloatStream(void);
+		bool isUnsignedStream(void);
+		bool isSignedStream(void);
+		int sampleBytes(void);
 
 	signals:
 		/**********************************************************************\

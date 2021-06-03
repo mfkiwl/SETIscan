@@ -4,6 +4,7 @@
 #include "soapyworker.h"
 
 #include <QLocale>
+#include <QString>
 #include <SoapySDR/Logger.hpp>
 
 #define DRIVER_KEY			"driver"
@@ -25,8 +26,10 @@ SoapyIO::SoapyIO(QObject *parent)
 		:QObject(parent)
 		,_channel(0)
 		,_dev(nullptr)
+		,_sampleRate(0)
 		,_thread(nullptr)
 		,_worker(nullptr)
+		,_rx(nullptr)
 	{
 	SoapySDR::setLogLevel(SOAPY_SDR_CRITICAL);
 
@@ -47,6 +50,8 @@ SoapyIO::~SoapyIO(void)
 	{
 	if (_thread != nullptr)
 		stopWorker();
+	if (_rx)
+		_dev->deactivateStream(_rx, 0, 0);
 	if (_dev)
 		SoapySDR::Device::unmake(_dev);
 	}
@@ -63,11 +68,11 @@ bool SoapyIO::setSampleRate(int sampleRate)
 		_dev->setSampleRate(SOAPY_SDR_RX, _channel, sampleRate);
 		LOG << "Set sample rate to" << l.toString(sampleRate);
 
-		int realRate = (int)(_dev->getSampleRate(SOAPY_SDR_RX, _channel));
-		if (realRate != sampleRate)
+		_sampleRate = (int)(_dev->getSampleRate(SOAPY_SDR_RX, _channel));
+		if (_sampleRate != sampleRate)
 			{
 			QString msg = QString("Real sample rate (%1) differs from requested (%2)")
-					.arg(l.toString(realRate), l.toString(sampleRate));
+					.arg(l.toString(_sampleRate), l.toString(sampleRate));
 			WARN << msg;
 			}
 		}
@@ -166,6 +171,83 @@ void SoapyIO::stopWorker(void)
 		_thread->quit();
 		_thread->wait();
 		}
+	}
+
+/******************************************************************************\
+|* Determine the characteristics of a stream-description
+\******************************************************************************/
+bool SoapyIO::isComplexStream(void)
+	{
+	if (_format.at(0) == QChar('C'))
+		return true;
+	return false;
+	}
+
+bool SoapyIO::isFloatStream(void)
+	{
+	int idx = 0;
+	if (isComplexStream())
+		idx ++;
+	if (_format.at(idx) == QChar('F'))
+		return true;
+	return false;
+	}
+
+bool SoapyIO::isSignedStream(void)
+	{
+	int idx = 0;
+	if (isComplexStream())
+		idx ++;
+	if (_format.at(idx) == QChar('S'))
+		return true;
+	return false;
+	}
+
+bool SoapyIO::isUnsignedStream(void)
+	{
+	int idx = 0;
+	if (isComplexStream())
+		idx ++;
+	if (_format.at(idx) == QChar('U'))
+		return true;
+	return false;
+	}
+
+int SoapyIO::sampleBytes(void)
+	{
+	int isComplex = isComplexStream();
+	int idx = (isComplex) ? 2 : 1;
+	int bits = _format.mid(idx).toInt();
+	bits = (isComplex) ? bits * 2 : bits;
+	return bits/8;
+	}
+
+
+/******************************************************************************\
+|* Create or return the current RX stream
+\******************************************************************************/
+SoapySDR::Stream * SoapyIO::rxStream(void)
+	{
+	if (_rx == nullptr)
+		{
+		_rx = _dev->setupStream(SOAPY_SDR_RX, _format.toStdString());
+		fprintf(stderr, "MTU: %lu\n", _dev->getStreamMTU(_rx));
+		_dev->activateStream(_rx, 0, 0);
+		}
+	return _rx;
+	}
+
+/******************************************************************************\
+|* Read data from a stream
+\******************************************************************************/
+int SoapyIO::waitForData(SoapySDR::Stream *stream,
+						 void *const *buffers,
+						 int elems,
+						 int &flags,
+						 long long ns,
+						 const long timeoutUs)
+	{
+	return _dev->readStream(stream, buffers, elems, flags, ns, timeoutUs);
 	}
 
 /******************************************************************************\
