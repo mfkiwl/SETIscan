@@ -13,6 +13,7 @@
 
 #include "properties.h"
 
+QT_FORWARD_DECLARE_CLASS(Processor)
 QT_FORWARD_DECLARE_CLASS(SoapyWorker)
 
 class SoapyIO : public QObject
@@ -46,6 +47,7 @@ class SoapyIO : public QObject
 		QThread *			_thread;			// Thread to tidy up later
 		SoapyWorker *		_worker;			// Worker or nullptr
 		SoapySDR::Stream *	_rx;				// Receiving-data stream
+		Processor *			_proc;				// Processing chain
 
 		/**********************************************************************\
 		|* Private methods
@@ -59,7 +61,7 @@ class SoapyIO : public QObject
 		/**********************************************************************\
 		|* Constructor
 		\**********************************************************************/
-		explicit SoapyIO(QObject *parent = nullptr);
+		explicit SoapyIO(Processor *processor);
 		~SoapyIO(void);
 
 		/**********************************************************************\

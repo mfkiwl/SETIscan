@@ -50,6 +50,11 @@ class Config : public Singleton<Config>
 		int sampleRate(void);
 
 		/******************************************************************\
+		|* Return the FFT size
+		\******************************************************************/
+		int fftSize(void);
+
+		/******************************************************************\
 		|* Return whether to list out criteria. These are only on the
 		|* commandline
 		\******************************************************************/

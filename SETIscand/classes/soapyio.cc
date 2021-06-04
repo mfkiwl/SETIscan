@@ -1,5 +1,6 @@
 #include "config.h"
 #include "constants.h"
+#include "processor.h"
 #include "soapyio.h"
 #include "soapyworker.h"
 
@@ -22,14 +23,15 @@ Q_LOGGING_CATEGORY(log_dsp, "seti.dsp   ")
 /******************************************************************************\
 |* Constructor
 \******************************************************************************/
-SoapyIO::SoapyIO(QObject *parent)
-		:QObject(parent)
+SoapyIO::SoapyIO(Processor *processor)
+		:QObject(processor)
 		,_channel(0)
 		,_dev(nullptr)
 		,_sampleRate(0)
 		,_thread(nullptr)
 		,_worker(nullptr)
 		,_rx(nullptr)
+		,_proc(processor)
 	{
 	SoapySDR::setLogLevel(SOAPY_SDR_CRITICAL);
 
@@ -157,6 +159,8 @@ void SoapyIO::startWorker(void)
 				_worker, &SoapyWorker::stopSampling);
 		connect(_thread, &QThread::finished,
 				_worker, &QObject::deleteLater);
+		connect(_worker, &SoapyWorker::dataAvailable,
+				_proc, &Processor::dataReceived);
 		_thread->start();
 
 		emit startWorkerSampling();
@@ -234,7 +238,6 @@ SoapySDR::Stream * SoapyIO::rxStream(void)
 	if (_rx == nullptr)
 		{
 		_rx = _dev->setupStream(SOAPY_SDR_RX, _format.toStdString());
-		fprintf(stderr, "MTU: %lu\n", _dev->getStreamMTU(_rx));
 		_dev->activateStream(_rx, 0, 0);
 		}
 	return _rx;
@@ -252,6 +255,7 @@ int SoapyIO::waitForData(SoapySDR::Stream *stream,
 	{
 	return _dev->readStream(stream, buffers, elems, flags, ns, timeoutUs);
 	}
+
 
 /******************************************************************************\
 |* Determine the radio to use by probing and filtering the results

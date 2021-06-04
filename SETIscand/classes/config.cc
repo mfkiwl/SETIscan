@@ -19,7 +19,9 @@
 #define SAMPLE_RATE_KEY		"sample-rate"
 
 #define FFT_WINDOW_TYPE_KEY	"fft-window-type"
+#define FFT_SIZE_KEY		"fft-size"
 
+#define DEFAULT_FFT_SIZE	"1024"
 
 /******************************************************************************\
 |* These are the commandline args we're managing
@@ -39,6 +41,9 @@ Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 		_frequency,
 		({"f", "frequency"}, "Center-frequencty to tune to", "1420406000"))
+Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
+		_fftSize,
+		({"n", "fft-num-bins"}, "Size of the FFT in bins", DEFAULT_FFT_SIZE))
 Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 		_fftWindow,
 		({"w", "fft-window-type"}, "Window-type for FFT", "hamming"))
@@ -80,6 +85,7 @@ Config::Config()
 	_parser.addOption(*_driverFilter);
 	_parser.addOption(*_idFilter);
 	_parser.addOption(*_frequency);
+	_parser.addOption(*_fftSize);
 	_parser.addOption(*_gain);
 	_parser.addOption(*_help);
 	_parser.addOption(*_listAntennas);
@@ -203,6 +209,21 @@ int Config::sampleRate(void)
 	return rate.toInt();
 	}
 
+
+/******************************************************************************\
+|* Get the fft-size
+\******************************************************************************/
+int Config::fftSize(void)
+	{
+	if (_parser.isSet(*_fftSize))
+		return _parser.value(*_fftSize).toInt();
+
+	QSettings s;
+	s.beginGroup(DSP_GROUP);
+	QString rate = s.value(FFT_SIZE_KEY, DEFAULT_FFT_SIZE).toString();
+	s.endGroup();
+	return rate.toInt();
+	}
 
 /******************************************************************************\
 |* Get the fft-windowing function

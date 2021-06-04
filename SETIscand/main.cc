@@ -3,8 +3,9 @@
 #include "config.h"
 #include "constants.h"
 #include "datamgr.h"
-#include "tester.h"
+#include "processor.h"
 #include "soapyio.h"
+#include "tester.h"
 
 int main(int argc, char *argv[])
 	{
@@ -24,11 +25,23 @@ int main(int argc, char *argv[])
 	Config &cfg = Config::instance();
 
 	/**************************************************************************\
-	|* Prevent copying data when transferring from thread to thread
+	|* Set up the processing hierarchy
 	\**************************************************************************/
-	DataMgr& dmgr = DataMgr::instance();
+	Processor processor(cfg, &a);
 
-	SoapyIO sio(&a);
+	/**************************************************************************\
+	|* Set up the data stream
+	\**************************************************************************/
+	SoapyIO sio(&processor);
+
+	/**************************************************************************\
+	|* Configure the processor
+	\**************************************************************************/
+	processor.init(&sio);
+
+	/**************************************************************************\
+	|* Start streaming data in
+	\**************************************************************************/
 	sio.startWorker();
 
 	return a.exec();

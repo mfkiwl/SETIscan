@@ -25,9 +25,12 @@ void SoapyWorker::startSampling(void)
 	|* Obtain a sample buffer from the data manager
 	\**************************************************************************/
 	int elems	= _sdr->sampleRate();
-	int handle	= DataMgr::instance().blockFor(elems, _sdr->sampleBytes());
+	int ping	= DataMgr::instance().blockFor(elems, _sdr->sampleBytes());
+	int pong	= DataMgr::instance().blockFor(elems, _sdr->sampleBytes());
 
-	void *buffers[] = {DataMgr::instance().asUint8(handle)};
+	void *pingBuffers[]		= {DataMgr::instance().asUint8(ping)};
+	void *pongBuffers[]		= {DataMgr::instance().asUint8(pong)};
+
 
 	/**************************************************************************\
 	|* Configure the stream
@@ -37,13 +40,19 @@ void SoapyWorker::startSampling(void)
 	/**************************************************************************\
 	|* Enter the loop
 	\**************************************************************************/
+	bool isPing = true;
 	while (_isActive)
 		{
+		void **buffers = isPing ? pingBuffers : pongBuffers;
 		int flags = 0;
 		long long time_ns = 0;
-		int ret = _sdr->waitForData(rx, buffers, elems, flags, time_ns);
-		fprintf(stderr, "ret:%d, flags:%d, elems: %d time:%lld\n",
-				ret, flags, elems, time_ns);
+
+		// Read the data
+		_sdr->waitForData(rx, buffers, elems, flags, time_ns);
+		emit dataAvailable(isPing ? ping : pong);
+
+		// Cycle around with the next buffer
+		isPing = !isPing;
 		}
 	}
 

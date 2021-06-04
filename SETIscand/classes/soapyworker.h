@@ -32,6 +32,8 @@ class SoapyWorker : public QObject
 		void startSampling(void);
 		void stopSampling(void);
 
+	signals:
+		void dataAvailable(int handle);
 	};
 
 #endif // SOAPYWORKER_H
