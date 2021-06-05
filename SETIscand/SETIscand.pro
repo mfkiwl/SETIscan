@@ -19,6 +19,7 @@ SOURCES += \
         classes/processor.cc \
         classes/soapyio.cc \
         classes/soapyworker.cc \
+        classes/taskfft.cc \
         classes/tester.cc \
         main.cc
 
@@ -43,4 +44,5 @@ HEADERS += \
     classes/processor.h \
     classes/soapyio.h \
     classes/soapyworker.h \
+    classes/taskfft.h \
     classes/tester.h

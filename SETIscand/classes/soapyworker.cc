@@ -48,8 +48,11 @@ void SoapyWorker::startSampling(void)
 		long long time_ns = 0;
 
 		// Read the data
-		_sdr->waitForData(rx, buffers, elems, flags, time_ns);
-		emit dataAvailable(isPing ? ping : pong);
+		int samples = _sdr->waitForData(rx, buffers, elems, flags, time_ns);
+		emit dataAvailable(isPing ? ping : pong,
+						   samples,
+						   _sdr->maxValue(),
+						   _sdr->sampleBytes());
 
 		// Cycle around with the next buffer
 		isPing = !isPing;

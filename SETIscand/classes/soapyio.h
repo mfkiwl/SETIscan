@@ -39,6 +39,7 @@ class SoapyIO : public QObject
 		GET(int, sampleRate);
 		GET(RangeList, bandwidths);
 		GET(QString, format);
+		GET(int, maxValue);
 
 	private:
 		/**********************************************************************\

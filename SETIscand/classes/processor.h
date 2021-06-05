@@ -2,6 +2,7 @@
 #define PROCESSOR_H
 
 #include <QObject>
+#include <QQueue>
 
 #include "properties.h"
 
@@ -22,6 +23,8 @@ class Processor : public QObject
 
 		int				_aggregate;		// Buffer to aggregate data into
 		int				_fft;			// Buffer for FFT data
+		int				_work;			// Working buffer
+		QQueue<double>	_previous;		// Data left over from last pass
 
 		/**********************************************************************\
 		|* Private methods
@@ -40,7 +43,7 @@ class Processor : public QObject
 		void init(SoapyIO *sio);
 
 	public slots:
-		void dataReceived(int handle);
+		void dataReceived(int handle, int samples, int max);
 
 	};
 

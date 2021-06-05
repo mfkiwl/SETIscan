@@ -421,10 +421,13 @@ void SoapyIO::_getLists(void)
 	|* Stream format
 	\**************************************************************************/
 	double max;
-	_format = _dev->getNativeStreamFormat(SOAPY_SDR_RX, 0, max).c_str();
+	_format		= _dev->getNativeStreamFormat(SOAPY_SDR_RX, 0, max).c_str();
+	_maxValue	= (int)max;
+
 	if (Config::instance().listNativeFormat())
 		{
-		printf("Native streaming format: %s\n", qPrintable(_format));
+		printf("Native streaming format: %s [max:%d]\n",
+				qPrintable(_format), _maxValue);
 		shouldExit = true;
 		}
 
