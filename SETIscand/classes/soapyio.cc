@@ -35,6 +35,7 @@ SoapyIO::SoapyIO(Processor *processor)
 		,_proc(processor)
 	{
 	//SoapySDR::setLogLevel(SOAPY_SDR_CRITICAL);
+	SoapySDR::setLogLevel(SOAPY_SDR_TRACE);
 
 	_findMatchingRadio();
 	if (_dev != nullptr)
@@ -127,11 +128,6 @@ bool SoapyIO::setAntenna(QString nameOrIndex)
 	\**************************************************************************/
 	bool isNumeric	= false;
 	size_t index	= nameOrIndex.toInt(&isNumeric);
-	if (index < 0)
-		{
-		ERR << "Cannot use  negative index to locate antennas";
-		return false;
-		}
 
 	if (isNumeric)
 		{
@@ -147,7 +143,7 @@ bool SoapyIO::setAntenna(QString nameOrIndex)
 		{
 		std::string pattern = nameOrIndex.toStdString();
 		for (std::string& name : list)
-			if (name.find(pattern) >= 0)
+			if (name.find(pattern) != std::string::npos)
 				{
 				nameOrIndex = name.c_str();
 				break;
