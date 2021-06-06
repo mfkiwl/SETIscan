@@ -9,6 +9,7 @@ class Config : public Singleton<Config>
 	{
 	private:
 		QCommandLineParser		_parser;
+		bool					_listAll;
 
 	public:
 		/******************************************************************\
@@ -64,6 +65,7 @@ class Config : public Singleton<Config>
 		bool listSampleRates(void);
 		bool listBandwidths(void);
 		bool listNativeFormat(void);
+		bool listChannels(void);
 
 		/******************************************************************\
 		|* Return the filter on the driver to select out the one we want
@@ -74,6 +76,12 @@ class Config : public Singleton<Config>
 		|* Return the filter on the mode to select out the one we want
 		\******************************************************************/
 		QString radioModeFilter(void);
+
+		/******************************************************************\
+		|* Return the antenna to use, as a string so it can be an index
+		|* or a name-substring
+		\******************************************************************/
+		QString antenna(void);
 
 		/******************************************************************\
 		|* Return the filter on the device-id to select out the one we want

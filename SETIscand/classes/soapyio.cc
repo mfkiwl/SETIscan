@@ -34,15 +34,17 @@ SoapyIO::SoapyIO(Processor *processor)
 		,_rx(nullptr)
 		,_proc(processor)
 	{
-	SoapySDR::setLogLevel(SOAPY_SDR_CRITICAL);
+	//SoapySDR::setLogLevel(SOAPY_SDR_CRITICAL);
 
 	_findMatchingRadio();
 	if (_dev != nullptr)
 		{
 		_getLists();
+
 		setSampleRate(Config::instance().sampleRate());
 		setFrequency(Config::instance().centerFrequency());
 		setGain(Config::instance().gain());
+		setAntenna(Config::instance().antenna());
 		}
 	}
 
@@ -112,6 +114,52 @@ bool SoapyIO::setFrequency(int frequency)
 		WARN << "Frequency " << frequency << "is outside of allowed ranges";
 	return ok;
 	}
+
+/******************************************************************************\
+|* Set the antenna using name or index
+\******************************************************************************/
+bool SoapyIO::setAntenna(QString nameOrIndex)
+	{
+	std::vector<std::string> list = _dev->listAntennas(SOAPY_SDR_RX, _channel);
+
+	/**************************************************************************\
+	|* Conver to a name if an index is given
+	\**************************************************************************/
+	bool isNumeric	= false;
+	size_t index	= nameOrIndex.toInt(&isNumeric);
+	if (index < 0)
+		{
+		ERR << "Cannot use  negative index to locate antennas";
+		return false;
+		}
+
+	if (isNumeric)
+		{
+		if (index < list.size())
+			nameOrIndex = list[index].c_str();
+		else
+			{
+			ERR << "Antenna index out of range, max=" << list.size()-1;
+			return false;
+			}
+		}
+	else
+		{
+		std::string pattern = nameOrIndex.toStdString();
+		for (std::string& name : list)
+			if (name.find(pattern) >= 0)
+				{
+				nameOrIndex = name.c_str();
+				break;
+				}
+		}
+
+	_dev->setAntenna(SOAPY_SDR_RX, _channel, nameOrIndex.toStdString());
+	LOG << "Set antenna to" << nameOrIndex;
+
+	return true;
+	}
+
 
 /******************************************************************************\
 |* Set the sample rate with a bounds check
@@ -239,9 +287,11 @@ SoapySDR::Stream * SoapyIO::rxStream(void)
 	if (_rx == nullptr)
 		{
 		std::string fmt					= _format.toStdString();
-		std::vector<size_t>  channels	= {0};
+		std::vector<size_t>  channels	= {(size_t)_channel};
+		SoapySDR::Kwargs args;
+		args["WIRE"] = fmt;
 
-		_rx				= _dev->setupStream(SOAPY_SDR_RX, fmt, channels);
+		_rx				= _dev->setupStream(SOAPY_SDR_RX, fmt, channels, args);
 		int error		= _dev->activateStream(_rx, 0, 0);
 		if (error != 0)
 			ERR << "Got error" << SoapySDR::errToStr(error) << "for" << fmt.c_str();
@@ -434,6 +484,30 @@ void SoapyIO::_getLists(void)
 		{
 		printf("Native streaming format: %s [max:%d]\n",
 				qPrintable(_format), _maxValue);
+		shouldExit = true;
+		}
+
+
+	/**************************************************************************\
+	|* Channels
+	\**************************************************************************/
+	if (Config::instance().listChannels())
+		{
+		int numChannels = _dev->getNumChannels(SOAPY_SDR_RX);
+		for (int i=0; i<numChannels; i++)
+			{
+			auto args	= _dev->getChannelInfo(SOAPY_SDR_RX, i);
+
+			printf("Channel %d {%d properties}\n", i, (int)args.size());
+			auto it		= args.begin();
+
+			while (it != args.end())
+				{
+				std::string key = it->first;
+				std::string val = it->second;
+				printf("   %s : %s\n", key.c_str(), val.c_str());
+				}
+			}
 		shouldExit = true;
 		}
 

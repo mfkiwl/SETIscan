@@ -76,6 +76,11 @@ class SoapyIO : public QObject
 		bool setFrequency(int frequency);
 
 		/**********************************************************************\
+		|* Set the antenna using name or index
+		\**********************************************************************/
+		bool setAntenna(QString nameOrIndex);
+
+		/**********************************************************************\
 		|* Set the gain in dB, with a bounds check
 		\**********************************************************************/
 		bool setGain(double gain);

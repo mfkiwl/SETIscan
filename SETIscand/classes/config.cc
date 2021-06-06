@@ -13,6 +13,7 @@
 #define DRIVER_KEY			"filter-driver"
 #define MODEL_KEY			"filter-model"
 #define ID_KEY				"filter-id"
+#define ANTENNA_KEY			"antenna"
 
 #define FREQUENCY_KEY		"frequency"
 #define GAIN_KEY			"gain"
@@ -29,6 +30,10 @@
 Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 		_help,
 		({"h", "help"}, "Show this useful help"))
+
+Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
+		_antenna,
+		(ANTENNA_KEY, "Antenna to use (name or index)", "0"))
 Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 		_driverFilter,
 		(DRIVER_KEY, "Filter for the driver name", "sdrplay"))
@@ -58,8 +63,14 @@ Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 		({"v", "version"}, "Display the program version"))
 
 Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
+		_listAllInfo,
+		("list-all", "List all info and exit"))
+Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 		_listAntennas,
 		("list-antennas", "List antennas and exit"))
+Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
+		_listChannels,
+		("list-channels", "List channel info and exit"))
 Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 		_listGains,
 		("list-gains", "List gains and exit"))
@@ -80,15 +91,19 @@ Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 |* Read configuration from both commandline and settings
 \******************************************************************************/
 Config::Config()
+	   :_listAll(false)
 	{
 	_parser.setApplicationDescription("Seti scanning daemon");
+	_parser.addOption(*_antenna);
 	_parser.addOption(*_driverFilter);
 	_parser.addOption(*_idFilter);
 	_parser.addOption(*_frequency);
 	_parser.addOption(*_fftSize);
 	_parser.addOption(*_gain);
 	_parser.addOption(*_help);
+	_parser.addOption(*_listAllInfo);
 	_parser.addOption(*_listAntennas);
+	_parser.addOption(*_listChannels);
 	_parser.addOption(*_listBandwidths);
 	_parser.addOption(*_listFrequencies);
 	_parser.addOption(*_listGains);
@@ -100,12 +115,13 @@ Config::Config()
 	_parser.addOption(*_fftWindow);
 
 	_parser.parse(QCoreApplication::arguments());
+	_listAll = _parser.isSet(*_listAllInfo);
 
 	if (_parser.isSet(*_help))
 		{
 		QString help = _parser.helpText();
 		fprintf(stderr, "%s\n\n"
-			"Window types for the FFT can be (use name or number):\n"
+			"Window types for the FFT can be (use name or index):\n"
 			" 0: Rectangle     1: Hamming      2: Hanning\n"
 			" 3: Blackman      4: Welch        5: Parzen\n\n"
 			,qUtf8Printable(help)
@@ -116,6 +132,21 @@ Config::Config()
 
 	if (_parser.isSet(*_version))
 		_parser.showVersion();
+	}
+
+/******************************************************************************\
+|* Get the antenna to use, as a string so it can be an index or a name-substring
+\******************************************************************************/
+QString Config::antenna(void)
+	{
+	if (_parser.isSet(*_antenna))
+		return _parser.value(*_antenna).toLower();
+
+	QSettings s;
+	s.beginGroup(RADIO_GROUP);
+	QString antenna = s.value(ANTENNA_KEY, "0").toString().toLower();
+	s.endGroup();
+	return antenna;
 	}
 
 /******************************************************************************\
@@ -270,7 +301,7 @@ Config::WindowType Config::fftWindowType(void)
 \******************************************************************************/
 bool Config::listAntennas(void)
 	{
-	return _parser.isSet(*_listAntennas);
+	return _listAll || _parser.isSet(*_listAntennas);
 	}
 
 /******************************************************************************\
@@ -278,7 +309,7 @@ bool Config::listAntennas(void)
 \******************************************************************************/
 bool Config::listGains(void)
 	{
-	return _parser.isSet(*_listGains);
+	return _listAll || _parser.isSet(*_listGains);
 	}
 
 /******************************************************************************\
@@ -286,7 +317,7 @@ bool Config::listGains(void)
 \******************************************************************************/
 bool Config::listFrequencyRanges(void)
 	{
-	return _parser.isSet(*_listFrequencies);
+	return _listAll || _parser.isSet(*_listFrequencies);
 	}
 
 /******************************************************************************\
@@ -294,7 +325,7 @@ bool Config::listFrequencyRanges(void)
 \******************************************************************************/
 bool Config::listSampleRates(void)
 	{
-	return _parser.isSet(*_listSampleRates);
+	return _listAll || _parser.isSet(*_listSampleRates);
 	}
 
 /******************************************************************************\
@@ -302,7 +333,7 @@ bool Config::listSampleRates(void)
 \******************************************************************************/
 bool Config::listBandwidths(void)
 	{
-	return _parser.isSet(*_listBandwidths);
+	return _listAll || _parser.isSet(*_listBandwidths);
 	}
 
 /******************************************************************************\
@@ -310,6 +341,14 @@ bool Config::listBandwidths(void)
 \******************************************************************************/
 bool Config::listNativeFormat(void)
 	{
-	return _parser.isSet(*_listNativeFormat);
+	return _listAll || _parser.isSet(*_listNativeFormat);
+	}
+
+/******************************************************************************\
+|* Get whether to list out the antennas
+\******************************************************************************/
+bool Config::listChannels(void)
+	{
+	return _listAll || _parser.isSet(*_listChannels);
 	}
 
