@@ -189,7 +189,7 @@ double Config::gain(void)
 
 	QSettings s;
 	s.beginGroup(RADIO_GROUP);
-	QString gain = s.value(GAIN_KEY, "40").toString();
+	QString gain = s.value(GAIN_KEY, "39").toString();
 	s.endGroup();
 	return gain.toDouble();
 	}
