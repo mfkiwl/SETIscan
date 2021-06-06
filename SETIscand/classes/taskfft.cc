@@ -1,3 +1,6 @@
+#include <cstring>
+
+#include "datamgr.h"
 #include "taskfft.h"
 
 /******************************************************************************\
@@ -6,19 +9,13 @@
 TaskFFT::TaskFFT(double *iq, int num)
 		: QRunnable()
 		, _numIQ(num/2)
-		, _real(nullptr)
-		, _imag(nullptr)
+		, _data(-1)
 	{
-	_real	= new double[_numIQ];
-	_imag	= new double[_numIQ];
+	DataMgr &dmgr		= DataMgr::instance();
+	_data				= dmgr.fftBlockFor(_numIQ);
+	fftw_complex *data	= dmgr.asFFT(_data);
 
-	double *I = _real;
-	double *Q = _imag;
-	for (int i=0; i<_numIQ; i++)
-		{
-		*I ++ = *iq ++;
-		*Q ++ = *iq ++;
-		}
+	::memcpy(data, iq, _numIQ * sizeof(fftw_complex));
 	}
 
 /******************************************************************************\
@@ -27,26 +24,16 @@ TaskFFT::TaskFFT(double *iq, int num)
 TaskFFT::TaskFFT(double *iq1, int num1, double *iq2, int num2)
 		: QRunnable()
 		, _numIQ((num1+num2)/2)
-		, _real(nullptr)
-		, _imag(nullptr)
+		, _data(-1)
 	{
-	_real	= new double[_numIQ];
-	_imag	= new double[_numIQ];
+	DataMgr &dmgr		= DataMgr::instance();
+	_data				= dmgr.fftBlockFor(_numIQ);
+	fftw_complex *data	= dmgr.asFFT(_data);
 
-	double *I = _real;
-	double *Q = _imag;
+	memcpy(data, iq1, num1*sizeof(double));
 
-	for (int i=0; i<num1/2; i++)
-		{
-		*I ++ = *iq1 ++;
-		*Q ++ = *iq1 ++;
-		}
-
-	for (int i=0; i<num2/2; i++)
-		{
-		*I ++ = *iq2 ++;
-		*Q ++ = *iq2 ++;
-		}
+	data += num1/2;
+	memcpy(data, iq2, num2*sizeof(double));
 	}
 
 /******************************************************************************\
@@ -54,8 +41,8 @@ TaskFFT::TaskFFT(double *iq1, int num1, double *iq2, int num2)
 \******************************************************************************/
 TaskFFT::~TaskFFT(void)
 	{
-	if (_real) delete [] _real;
-	if (_imag) delete [] _imag;
+	if (_data >= 0)
+		DataMgr::instance().release(_data);
 	}
 
 

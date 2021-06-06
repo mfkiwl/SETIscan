@@ -8,8 +8,7 @@
 class TaskFFT : public QRunnable
 	{
 	GET(int, numIQ);
-	GET(double *, real);
-	GET(double *, imag);
+	GET(int64_t, data);
 
 	public:
 		TaskFFT(double *iq, int num);

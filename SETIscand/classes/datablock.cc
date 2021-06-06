@@ -11,13 +11,18 @@
 /******************************************************************************\
 |* Construct a fixed-size block
 \******************************************************************************/
-DataBlock::DataBlock(size_t size)
+DataBlock::DataBlock(size_t size, bool isFFT)
 		  :_size(size)
 		  ,_data(nullptr)
 		  ,_refs(0)
 		  ,_isValid(false)
+		  ,_isFFT(isFFT)
 	{
-	_data = new uint8_t [_size];
+	if (_isFFT)
+		_data = reinterpret_cast<uint8_t *>(fftw_malloc(_size));
+	else
+		_data = new uint8_t [_size];
+
 	if (_data != nullptr)
 		_isValid = true;
 	}
@@ -25,13 +30,18 @@ DataBlock::DataBlock(size_t size)
 /******************************************************************************\
 |* Construct a fixed-size block
 \******************************************************************************/
-DataBlock::DataBlock(int elements, int sizePerElement)
+DataBlock::DataBlock(size_t elements, size_t sizePerElement, bool isFFT)
 		  :_size(elements * sizePerElement)
 		  ,_data(nullptr)
 		  ,_refs(0)
 		  ,_isValid(false)
+		  ,_isFFT(isFFT)
 	{
-	_data = new uint8_t [_size];
+	size_t size = elements * sizePerElement;
+	if (_isFFT)
+		_data = reinterpret_cast<uint8_t *>(fftw_malloc(size));
+	else
+		_data = new uint8_t [size];
 	if (_data != nullptr)
 		_isValid = true;
 	}
@@ -45,7 +55,13 @@ DataBlock::~DataBlock(void)
 	if (_refs != 0)
 		ERR << "Warning - deleting non-zero-references block!";
 	if (_data != nullptr)
-		delete [] _data;
+		{
+		if (_isFFT)
+			fftw_free(_data);
+		else
+			delete [] _data;
+		_data = nullptr;
+		}
 	}
 
 /******************************************************************************\

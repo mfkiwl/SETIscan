@@ -3,10 +3,17 @@
 #include <QThreadPool>
 
 #include "config.h"
+#include "constants.h"
 #include "datamgr.h"
 #include "processor.h"
 #include "soapyio.h"
 #include "taskfft.h"
+
+/******************************************************************************\
+|* Categorised logging support
+\******************************************************************************/
+#define LOG qDebug(log_dsp) << QTime::currentTime().toString("hh:mm:ss.zzz")
+#define ERR qCritical(log_dsp) << QTime::currentTime().toString("hh:mm:ss.zzz")
 
 /******************************************************************************\
 |* Constructor
@@ -17,14 +24,33 @@ Processor::Processor(Config& cfg, QObject *parent)
 		  ,_sio(nullptr)
 		  ,_fftSize(0)
 		  ,_aggregate(-1)
-		  ,_fft(-1)
+		  ,_work(-1)
+		  ,_fftIn(-1)
+		  ,_fftOut(-1)
 	{
+	}
+
+/******************************************************************************\
+|* Destructor
+\******************************************************************************/
+Processor::~Processor(void)
+	{
+	DataMgr &dmgr	= DataMgr::instance();
+
+	if (_aggregate >= 0)
+		dmgr.release(_aggregate);
+	if (_fftIn >= 0)
+		dmgr.release(_fftIn);
+	if (_fftOut >= 0)
+		dmgr.release(_fftOut);
+	if (_work >= 0)
+		dmgr.release(_work);
 	}
 
 /******************************************************************************\
 |* We got data back
 \******************************************************************************/
-void Processor::dataReceived(int buffer, int samples, int max)
+void Processor::dataReceived(int64_t buffer, int samples, int max, int bytes)
 	{
 	DataMgr &dmgr	= DataMgr::instance();
 	int8_t * src8	= dmgr.asInt8(buffer);
@@ -42,7 +68,7 @@ void Processor::dataReceived(int buffer, int samples, int max)
 	|* Convert the buffer to double values
 	\**************************************************************************/
 	for (int i=0; i<samples; i++)
-		*work++ = (samples == 1) ? (*src8++) * scale : (*src16++) * scale;
+		*work++ = (bytes == 1) ? (*src8++) * scale : (*src16++) * scale;
 	work = dmgr.asDouble(_work);
 
 	/**************************************************************************\
@@ -107,6 +133,22 @@ void Processor::init(SoapyIO *sio)
 	_sio		= sio;
 	_fftSize	= _cfg.fftSize();
 	_allocate();
+
+	/**************************************************************************\
+	|* Create the FFT plan. We won't actually use these buffers, but we can
+	|* substitute others as long as they are compatible, so allocate these
+	|* in exactly the same way as the ones we will use.
+	\**************************************************************************/
+	LOG << "Creating FFT plan";
+	DataMgr &dmgr		= DataMgr::instance();
+	fftw_complex *in	= dmgr.asFFT(_fftIn);
+	fftw_complex *out	= dmgr.asFFT(_fftOut);
+	_fftPlan			= fftw_plan_dft_1d(_fftSize,
+										   in,
+										   out,
+										   FFTW_FORWARD,
+										   FFTW_PATIENT);
+	LOG << "FFT plan created";
 	}
 
 /******************************************************************************\
@@ -116,15 +158,19 @@ void Processor::_allocate(void)
 	{
 	DataMgr &dmgr = DataMgr::instance();
 
-	if (_fft >= 0)
-		dmgr.release(_fft);
-	_fft		= dmgr.blockFor(_fftSize, sizeof(std::complex<double>));
-
 	if (_aggregate >= 0)
 		dmgr.release(_aggregate);
-	_aggregate	= dmgr.blockFor(_fftSize, sizeof(double));;
+	_aggregate	= dmgr.blockFor(_fftSize, sizeof(double));
 
 	if (_work >= 0)
 		dmgr.release(_work);
-	_work	= dmgr.blockFor(Config::instance().sampleRate(), sizeof(double));;
+	_work	= dmgr.blockFor(Config::instance().sampleRate(), sizeof(double));
+
+	if (_fftIn >= 0)
+		dmgr.release(_fftIn);
+	_fftIn	= dmgr.fftBlockFor(_fftSize);
+
+	if (_fftOut >= 0)
+		dmgr.release(_fftOut);
+	_fftOut	= dmgr.fftBlockFor(_fftSize);
 	}

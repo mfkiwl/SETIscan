@@ -3,7 +3,7 @@
 
 #include <QObject>
 #include <QQueue>
-
+#include <fftw3.h>
 #include "properties.h"
 
 QT_FORWARD_DECLARE_CLASS(Config)
@@ -21,10 +21,13 @@ class Processor : public QObject
 		SoapyIO *		_sio;			// IO object
 		int				_fftSize;		// Size of the FFT
 
-		int				_aggregate;		// Buffer to aggregate data into
-		int				_fft;			// Buffer for FFT data
-		int				_work;			// Working buffer
+		int64_t			_aggregate;		// Buffer to aggregate data into
+		int64_t			_work;			// Working buffer
 		QQueue<double>	_previous;		// Data left over from last pass
+
+		fftw_plan		_fftPlan;		// Plan for the FFT
+		int64_t			_fftIn;			// FFTW buffer used during planning
+		int64_t			_fftOut;		// FFTW buffer used during planning
 
 		/**********************************************************************\
 		|* Private methods
@@ -36,6 +39,7 @@ class Processor : public QObject
 		|* Constructor
 		\**********************************************************************/
 		explicit Processor(Config& cfg, QObject *parent = nullptr);
+		~Processor(void);
 
 		/**********************************************************************\
 		|* Initialise with the data-stream params
@@ -43,7 +47,7 @@ class Processor : public QObject
 		void init(SoapyIO *sio);
 
 	public slots:
-		void dataReceived(int handle, int samples, int max);
+		void dataReceived(int64_t handle, int samples, int max, int bytes);
 
 	};
 

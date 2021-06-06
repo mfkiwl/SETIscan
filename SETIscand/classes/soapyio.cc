@@ -7,6 +7,7 @@
 #include <QLocale>
 #include <QString>
 #include <SoapySDR/Logger.hpp>
+#include <SoapySDR/Errors.hpp>
 
 #define DRIVER_KEY			"driver"
 #define MODE_KEY			"mode"
@@ -237,8 +238,13 @@ SoapySDR::Stream * SoapyIO::rxStream(void)
 	{
 	if (_rx == nullptr)
 		{
-		_rx = _dev->setupStream(SOAPY_SDR_RX, _format.toStdString());
-		_dev->activateStream(_rx, 0, 0);
+		std::string fmt					= _format.toStdString();
+		std::vector<size_t>  channels	= {0};
+
+		_rx				= _dev->setupStream(SOAPY_SDR_RX, fmt, channels);
+		int error		= _dev->activateStream(_rx, 0, 0);
+		if (error != 0)
+			ERR << "Got error" << SoapySDR::errToStr(error) << "for" << fmt.c_str();
 		}
 	return _rx;
 	}

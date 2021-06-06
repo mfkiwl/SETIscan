@@ -18,6 +18,7 @@ Q_LOGGING_CATEGORY(log_data, "seti.data  ")
 |* Create the data manager. Only called via the sharedInstance class method
 \******************************************************************************/
 DataMgr::DataMgr(void)
+		:_handle(0)
 	{}
 
 
@@ -30,8 +31,8 @@ DataMgr::~DataMgr(void)
 		delete block;
 	_candidate.clear();
 
-	for (DataBlock* block : _active)
-		delete block;
+	QMap<int64_t, DataBlock*>::const_iterator i = _active.constBegin();
+		delete i.value();
 	_active.clear();
 	}
 
@@ -40,7 +41,7 @@ DataMgr::~DataMgr(void)
 \******************************************************************************/
 int DataMgr::blockFor(size_t size)
 	{
-	int result = -1;
+	int64_t result = (int64_t)-1;
 	QMutexLocker guard(&_lock);
 
 	/**************************************************************************\
@@ -53,11 +54,11 @@ int DataMgr::blockFor(size_t size)
 		{
 		if (block->size() >= size)
 			{
-			_active.append(block);
+			result = _handle ++;
+			_active[result] = block;
 			_candidate.removeAt(idx);
 			block->retain();
 			foundBlock = true;
-			result = _active.size()-1;
 			break;
 			}
 		idx ++;
@@ -68,9 +69,10 @@ int DataMgr::blockFor(size_t size)
 	\**************************************************************************/
 	if (!foundBlock)
 		{
+		result = _handle ++;
 		DataBlock *block = new DataBlock(size);
 		block->retain();
-		_active.append(block);
+		_active[result] = block;
 		result = _active.size()-1;
 		}
 
@@ -80,20 +82,65 @@ int DataMgr::blockFor(size_t size)
 /******************************************************************************\
 |* Create or find a block with a given size-per-element and count
 \******************************************************************************/
-int DataMgr::blockFor(int count, int sizePerElement)
+int DataMgr::blockFor(size_t count, size_t sizePerElement)
 	{
 	return blockFor(count * sizePerElement);
+	}
+
+/******************************************************************************\
+|* Create or find a block with a given size using the FFTW3 allocation strategy
+\******************************************************************************/
+int DataMgr::fftBlockFor(size_t bins)
+	{
+	int64_t result = (int64_t)-1;
+	QMutexLocker guard(&_lock);
+
+	size_t size = sizeof(fftw_complex) * bins;
+
+	/**************************************************************************\
+	|* See if we can move one of the elements from the candidate list into the
+	|* active list. Tighter constraints on the test due to the fft plan
+	|* requirements
+	\**************************************************************************/
+	bool foundBlock = false;
+	int idx = 0;
+	for (DataBlock* block : _candidate)
+		{
+		if (block->size() == size && block->isFFT())
+			{
+			result = _handle ++;
+			_active[result] = block;
+			_candidate.removeAt(idx);
+			block->retain();
+			foundBlock = true;
+			break;
+			}
+		idx ++;
+		}
+
+	/**************************************************************************\
+	|* If not, create a new block of sufficient size using the FFTW allocator
+	\**************************************************************************/
+	if (!foundBlock)
+		{
+		result = _handle ++;
+		DataBlock *block = new DataBlock(size, true);
+		block->retain();
+		_active[result] = block;
+		}
+
+	return result;
 	}
 
 
 /******************************************************************************\
 |* Return the pointer to the data in various formats: as uint8_t
 \******************************************************************************/
-uint8_t * DataMgr::asUint8(int idx)
+uint8_t * DataMgr::asUint8(int64_t idx)
 	{
 	QMutexLocker guard(&_lock);
 
-	if ((idx < 0) || (idx >= _active.size()))
+	if (!_active.contains(idx))
 		{
 		ERR << "Requested uint8_t data for OOB index " << idx;
 		return nullptr;
@@ -104,11 +151,11 @@ uint8_t * DataMgr::asUint8(int idx)
 /******************************************************************************\
 |* Return the pointer to the data in various formats: as int8_t
 \******************************************************************************/
-int8_t * DataMgr::asInt8(int idx)
+int8_t * DataMgr::asInt8(int64_t idx)
 	{
 	QMutexLocker guard(&_lock);
 
-	if ((idx < 0) || (idx >= _active.size()))
+	if (!_active.contains(idx))
 		{
 		ERR << "Requested int8_t data for OOB index " << idx;
 		return nullptr;
@@ -120,11 +167,11 @@ int8_t * DataMgr::asInt8(int idx)
 /******************************************************************************\
 |* Return the pointer to the data in various formats: as uint16_t
 \******************************************************************************/
-uint16_t * DataMgr::asUint16(int idx)
+uint16_t * DataMgr::asUint16(int64_t idx)
 	{
 	QMutexLocker guard(&_lock);
 
-	if ((idx < 0) || (idx >= _active.size()))
+	if (!_active.contains(idx))
 		{
 		ERR << "Requested uint16_t data for OOB index " << idx;
 		return nullptr;
@@ -135,11 +182,11 @@ uint16_t * DataMgr::asUint16(int idx)
 /******************************************************************************\
 |* Return the pointer to the data in various formats: as int16_t
 \******************************************************************************/
-int16_t * DataMgr::asInt16(int idx)
+int16_t * DataMgr::asInt16(int64_t idx)
 	{
 	QMutexLocker guard(&_lock);
 
-	if ((idx < 0) || (idx >= _active.size()))
+	if (!_active.contains(idx))
 		{
 		ERR << "Requested uint8_t data for OOB index " << idx;
 		return nullptr;
@@ -150,11 +197,11 @@ int16_t * DataMgr::asInt16(int idx)
 /******************************************************************************\
 |* Return the pointer to the data in various formats: as uint32_t
 \******************************************************************************/
-uint32_t * DataMgr::asUint32(int idx)
+uint32_t * DataMgr::asUint32(int64_t idx)
 	{
 	QMutexLocker guard(&_lock);
 
-	if ((idx < 0) || (idx >= _active.size()))
+	if (!_active.contains(idx))
 		{
 		ERR << "Requested int data for OOB index " << idx;
 		return nullptr;
@@ -165,11 +212,11 @@ uint32_t * DataMgr::asUint32(int idx)
 /******************************************************************************\
 |* Return the pointer to the data in various formats: as int32_t
 \******************************************************************************/
-int32_t * DataMgr::asInt32(int idx)
+int32_t * DataMgr::asInt32(int64_t idx)
 	{
 	QMutexLocker guard(&_lock);
 
-	if ((idx < 0) || (idx >= _active.size()))
+	if (!_active.contains(idx))
 		{
 		ERR << "Requested int data for OOB index " << idx;
 		return nullptr;
@@ -180,11 +227,11 @@ int32_t * DataMgr::asInt32(int idx)
 /******************************************************************************\
 |* Return the pointer to the data in various formats: as float
 \******************************************************************************/
-float * DataMgr::asFloat(int idx)
+float * DataMgr::asFloat(int64_t idx)
 	{
 	QMutexLocker guard(&_lock);
 
-	if ((idx < 0) || (idx >= _active.size()))
+	if (!_active.contains(idx))
 		{
 		ERR << "Requested float data for OOB index " << idx;
 		return nullptr;
@@ -195,11 +242,11 @@ float * DataMgr::asFloat(int idx)
 /******************************************************************************\
 |* Return the pointer to the data in various formats: as double
 \******************************************************************************/
-double * DataMgr::asDouble(int idx)
+double * DataMgr::asDouble(int64_t idx)
 	{
 	QMutexLocker guard(&_lock);
 
-	if ((idx < 0) || (idx >= _active.size()))
+	if (!_active.contains(idx))
 		{
 		ERR << "Requested double data for OOB index " << idx;
 		return nullptr;
@@ -210,11 +257,11 @@ double * DataMgr::asDouble(int idx)
 /******************************************************************************\
 |* Return the pointer to the data in various formats: as complex float
 \******************************************************************************/
-std::complex<float> * DataMgr::asComplexFloat(int idx)
+std::complex<float> * DataMgr::asComplexFloat(int64_t idx)
 	{
 	QMutexLocker guard(&_lock);
 
-	if ((idx < 0) || (idx >= _active.size()))
+	if (!_active.contains(idx))
 		{
 		ERR << "Requested double data for OOB index " << idx;
 		return nullptr;
@@ -225,11 +272,11 @@ std::complex<float> * DataMgr::asComplexFloat(int idx)
 /******************************************************************************\
 |* Return the pointer to the data in various formats: as complex double
 \******************************************************************************/
-std::complex<double> * DataMgr::asComplexDouble(int idx)
+std::complex<double> * DataMgr::asComplexDouble(int64_t idx)
 	{
 	QMutexLocker guard(&_lock);
 
-	if ((idx < 0) || (idx >= _active.size()))
+	if (!_active.contains(idx))
 		{
 		ERR << "Requested double data for OOB index " << idx;
 		return nullptr;
@@ -237,59 +284,74 @@ std::complex<double> * DataMgr::asComplexDouble(int idx)
 	return reinterpret_cast<std::complex<double> *>(_active[idx]->data());
 	}
 
+/******************************************************************************\
+|* Return the pointer to the data in various formats: as fftw3 compatible
+\******************************************************************************/
+fftw_complex* DataMgr::asFFT(int64_t idx)
+	{
+	QMutexLocker guard(&_lock);
+
+	if (!_active.contains(idx))
+		{
+		ERR << "Requested FFT data for OOB index " << idx;
+		return nullptr;
+		}
+	return reinterpret_cast<fftw_complex*>(_active[idx]->data());
+	}
+
 
 /******************************************************************************\
 |* Handle the retain-count for a given index
 \******************************************************************************/
-int DataMgr::retainCount(int idx)
+int DataMgr::retainCount(uint64_t handle)
 	{
 	QMutexLocker guard(&_lock);
 
-	if ((idx < 0) || (idx >= _active.size()))
+	if (!_active.contains(handle))
 		{
-		ERR << "Retain count requested for OOB index " << idx;
+		ERR << "Retain count requested for unknown handle " << handle;
 		return -1;
 		}
-	return _active[idx]->refs();
+	return _active[handle]->refs();
 	}
 
 /******************************************************************************\
 |* Handle release for a given index
 \******************************************************************************/
-void DataMgr::release(int idx)
+void DataMgr::release(uint64_t handle)
 	{
 	QMutexLocker guard(&_lock);
 
-	if ((idx < 0) || (idx >= _active.size()))
+	if (!_active.contains(handle))
 		{
-		ERR << "Release requested for OOB index " << idx;
+		ERR << "Release requested for unknown handle " << handle;
 		return;
 		}
-	_active[idx]->release();
+	_active[handle]->release();
 
 	/**************************************************************************\
 	|* Move to candidate if the refs == 0
 	\**************************************************************************/
-	if (_active[idx]->refs() == 0)
+	if (_active[handle]->refs() == 0)
 		{
-		DataBlock *block = _active[idx];
+		DataBlock *block = _active[handle];
 		_candidate.append(block);
-		_active.removeAt(idx);
+		_active.remove(handle);
 		}
 	}
 
 /******************************************************************************\
 |* Handle retain for a given index
 \******************************************************************************/
-void DataMgr::retain(int idx)
+void DataMgr::retain(uint64_t handle)
 	{
 	QMutexLocker guard(&_lock);
 
-	if ((idx < 0) || (idx >= _active.size()))
+	if (!_active.contains(handle))
 		{
-		ERR << "Retain requested for OOB index " << idx;
+		ERR << "Retain requested for unknown handle " << handle;
 		}
-	_active[idx]->retain();
+	_active[handle]->retain();
 	}
 
 /******************************************************************************\

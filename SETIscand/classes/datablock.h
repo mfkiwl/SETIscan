@@ -2,6 +2,7 @@
 #define DATABLOCK_H
 
 #include <QObject>
+#include <fftw3.h>
 
 #include "properties.h"
 
@@ -14,13 +15,16 @@ class DataBlock
 	GET(uint8_t *, data);			// Actual data block
 	GET(int, refs);					// Number of clients for this block
 	GET(bool, isValid);				// If the block is valid post construction
+	GET(bool, isFFT);				// Allocated via fftw3
 
 	public:
 		/**********************************************************************\
 		|* Construction
 		\**********************************************************************/
-		explicit DataBlock(int elements, int sizePerElement);
-		explicit DataBlock(size_t size);
+		explicit DataBlock(size_t elements,
+						   size_t sizePerElement,
+						   bool isFFT=false);
+		explicit DataBlock(size_t size, bool isFFT=false);
 		~DataBlock();
 
 		/**********************************************************************\

@@ -33,7 +33,7 @@ class SoapyWorker : public QObject
 		void stopSampling(void);
 
 	signals:
-		void dataAvailable(int handle, int elems, int max, int bytes);
+		void dataAvailable(int64_t handle, int elems, int max, int bytes);
 	};
 
 #endif // SOAPYWORKER_H
