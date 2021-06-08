@@ -28,6 +28,8 @@ Processor::Processor(Config& cfg, QObject *parent)
 		  ,_fftIn(-1)
 		  ,_fftOut(-1)
 	{
+	// FIXME: Create and use the window data
+
 	_aggregator = new FFTAggregator(this);
 	_aggregator->moveToThread(&_bgThread);
 	_bgThread.start();
