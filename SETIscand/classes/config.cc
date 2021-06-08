@@ -21,6 +21,8 @@
 
 #define FFT_WINDOW_TYPE_KEY	"fft-window-type"
 #define FFT_SIZE_KEY		"fft-size"
+#define UPDATE_TIME_KEY		"fft-update-time"
+#define SAMPLE_TIME_KEY		"fft-sample-time"
 
 #define DEFAULT_FFT_SIZE	"1024"
 
@@ -58,6 +60,12 @@ Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 		_sampleRate,
 		({"s", "sample-rate"}, "Baseband Sample rate", "2048000"))
+Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
+		_timeSample,
+		({"t", "time-between-samples"}, "Time to aggregate data over", "300"))
+Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
+		_timeUpdate,
+		({"u", "time-between-updates"}, "Send an update every ...", "5"))
 Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 		_version,
 		({"v", "version"}, "Display the program version"))
@@ -111,6 +119,8 @@ Config::Config()
 	_parser.addOption(*_listSampleRates);
 	_parser.addOption(*_modeFilter);
 	_parser.addOption(*_sampleRate);
+	_parser.addOption(*_timeSample);
+	_parser.addOption(*_timeUpdate);
 	_parser.addOption(*_version);
 	_parser.addOption(*_fftWindow);
 
@@ -193,6 +203,36 @@ int Config::radioIdFilter(void)
 	QString filter = s.value(ID_KEY, "-1").toString();
 	s.endGroup();
 	return filter.toInt();
+	}
+
+/******************************************************************************\
+|* Get the time between samples
+\******************************************************************************/
+double Config::secondsBetweenUpdates(void)
+	{
+	if (_parser.isSet(*_timeUpdate))
+		return _parser.value(*_timeUpdate).toDouble();
+
+	QSettings s;
+	s.beginGroup(DSP_GROUP);
+	double secs = s.value(UPDATE_TIME_KEY, "5.0").toString().toDouble();
+	s.endGroup();
+	return secs;
+	}
+
+/******************************************************************************\
+|* Get the time between samples
+\******************************************************************************/
+double Config::secondsBetweenSamples(void)
+	{
+	if (_parser.isSet(*_timeSample))
+		return _parser.value(*_timeSample).toDouble();
+
+	QSettings s;
+	s.beginGroup(DSP_GROUP);
+	double secs = s.value(SAMPLE_TIME_KEY, "300.0").toString().toDouble();
+	s.endGroup();
+	return secs;
 	}
 
 /******************************************************************************\

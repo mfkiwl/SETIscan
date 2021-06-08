@@ -5,6 +5,7 @@
 #include "config.h"
 #include "constants.h"
 #include "datamgr.h"
+#include "fftaggregator.h"
 #include "processor.h"
 #include "soapyio.h"
 #include "taskfft.h"
@@ -23,11 +24,13 @@ Processor::Processor(Config& cfg, QObject *parent)
 		  ,_cfg(cfg)
 		  ,_sio(nullptr)
 		  ,_fftSize(0)
-		  ,_aggregate(-1)
 		  ,_work(-1)
 		  ,_fftIn(-1)
 		  ,_fftOut(-1)
 	{
+	_aggregator = new FFTAggregator(this);
+	_aggregator->moveToThread(&_bgThread);
+	_bgThread.start();
 	}
 
 /******************************************************************************\
@@ -36,9 +39,8 @@ Processor::Processor(Config& cfg, QObject *parent)
 Processor::~Processor(void)
 	{
 	DataMgr &dmgr	= DataMgr::instance();
+	ERR << "Destroying processor";
 
-	if (_aggregate >= 0)
-		dmgr.release(_aggregate);
 	if (_fftIn >= 0)
 		dmgr.release(_fftIn);
 	if (_fftOut >= 0)
@@ -84,31 +86,39 @@ void Processor::dataReceived(int64_t buffer, int samples, int max, int bytes)
 		{
 		while (samples > _fftSize*2)
 			{
+			TaskFFT *task = nullptr;
+
 			/******************************************************************\
 			|* 2: There are entries left over from the last run
 			\******************************************************************/
 			if (_previous.size() > 0)
 				{
-				TaskFFT  *task = new TaskFFT(_previous.data(),
-											 _previous.size(),
-											 work,
-											 _fftSize * 2 - _previous.size());
+				task = new TaskFFT(_previous.data(),
+								   _previous.size(),
+								   work,
+								   _fftSize * 2 - _previous.size());
+
 				samples -= _previous.size();
 				work += _fftSize * 2 - _previous.size();
 				_previous.clear();
-				QThreadPool::globalInstance()->start(task);
 				}
 			else
 				{
 				/**************************************************************\
 				|* 3: We just have to iterate through the passed-in data
 				\**************************************************************/
-				TaskFFT *task = new TaskFFT(work, _fftSize*2);
-				QThreadPool::globalInstance()->start(task);
+				task = new TaskFFT(work, _fftSize*2);
 
 				work += _fftSize*2;
 				samples -= _fftSize*2;
 				}
+
+			connect(task, &TaskFFT::fftDone,
+					_aggregator, &FFTAggregator::fftReady);
+
+			task->setPlan(_fftPlan);
+			QThreadPool::globalInstance()->start(task);
+
 			}
 
 		/**********************************************************************\
@@ -157,10 +167,6 @@ void Processor::init(SoapyIO *sio)
 void Processor::_allocate(void)
 	{
 	DataMgr &dmgr = DataMgr::instance();
-
-	if (_aggregate >= 0)
-		dmgr.release(_aggregate);
-	_aggregate	= dmgr.blockFor(_fftSize, sizeof(double));
 
 	if (_work >= 0)
 		dmgr.release(_work);

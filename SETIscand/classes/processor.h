@@ -2,11 +2,13 @@
 #define PROCESSOR_H
 
 #include <QObject>
+#include <QThread>
 #include <QQueue>
 #include <fftw3.h>
 #include "properties.h"
 
 QT_FORWARD_DECLARE_CLASS(Config)
+QT_FORWARD_DECLARE_CLASS(FFTAggregator)
 QT_FORWARD_DECLARE_CLASS(SoapyIO)
 
 class Processor : public QObject
@@ -21,13 +23,15 @@ class Processor : public QObject
 		SoapyIO *		_sio;			// IO object
 		int				_fftSize;		// Size of the FFT
 
-		int64_t			_aggregate;		// Buffer to aggregate data into
 		int64_t			_work;			// Working buffer
 		QQueue<double>	_previous;		// Data left over from last pass
 
 		fftw_plan		_fftPlan;		// Plan for the FFT
 		int64_t			_fftIn;			// FFTW buffer used during planning
 		int64_t			_fftOut;		// FFTW buffer used during planning
+
+		QThread			_bgThread;		// Background aggregation thread
+		FFTAggregator *	_aggregator;	// Collect data and send it off
 
 		/**********************************************************************\
 		|* Private methods

@@ -10,11 +10,16 @@ TaskFFT::TaskFFT(double *iq, int num)
 		: QRunnable()
 		, _numIQ(num/2)
 		, _data(-1)
+		,_results(-1)
 	{
+	Q_ASSERT(num % 2 == 0);
+
 	DataMgr &dmgr		= DataMgr::instance();
+
+	_results			= dmgr.fftBlockFor(_numIQ);
+
 	_data				= dmgr.fftBlockFor(_numIQ);
 	fftw_complex *data	= dmgr.asFFT(_data);
-
 	::memcpy(data, iq, _numIQ * sizeof(fftw_complex));
 	}
 
@@ -23,10 +28,14 @@ TaskFFT::TaskFFT(double *iq, int num)
 \******************************************************************************/
 TaskFFT::TaskFFT(double *iq1, int num1, double *iq2, int num2)
 		: QRunnable()
-		, _numIQ((num1+num2)/2)
-		, _data(-1)
+		,_numIQ((num1+num2)/2)
+		,_data(-1)
+		,_results(-1)
 	{
 	DataMgr &dmgr		= DataMgr::instance();
+
+	_results			= dmgr.fftBlockFor(_numIQ);
+
 	_data				= dmgr.fftBlockFor(_numIQ);
 	fftw_complex *data	= dmgr.asFFT(_data);
 
@@ -51,5 +60,8 @@ TaskFFT::~TaskFFT(void)
 \******************************************************************************/
 void TaskFFT::run(void)
 	{
-	fprintf(stderr, "Processing FFT\n");
+	DataMgr &dmgr		= DataMgr::instance();
+	fftw_execute_dft(_plan, dmgr.asFFT(_data), dmgr.asFFT(_results));
+
+	emit fftDone(_results);
 	}

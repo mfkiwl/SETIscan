@@ -125,8 +125,13 @@ int DataMgr::fftBlockFor(size_t bins)
 		{
 		result = _handle ++;
 		DataBlock *block = new DataBlock(size, true);
-		block->retain();
-		_active[result] = block;
+		if (block == nullptr)
+			result = -1;
+		else
+			{
+			block->retain();
+			_active[result] = block;
+			}
 		}
 
 	return result;

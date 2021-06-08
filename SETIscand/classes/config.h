@@ -36,6 +36,16 @@ class Config : public Singleton<Config>
 		WindowType fftWindowType(void);
 
 		/******************************************************************\
+		|* Return the time between samples in seconds
+		\******************************************************************/
+		double secondsBetweenSamples(void);
+
+		/******************************************************************\
+		|* Return the time between updates in seconds
+		\******************************************************************/
+		double secondsBetweenUpdates(void);
+
+		/******************************************************************\
 		|* Return the frequency to tune to
 		\******************************************************************/
 		int centerFrequency(void);
