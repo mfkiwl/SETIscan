@@ -61,7 +61,26 @@ TaskFFT::~TaskFFT(void)
 void TaskFFT::run(void)
 	{
 	DataMgr &dmgr		= DataMgr::instance();
+
+	/**********************************************************************\
+	|* Apply the windowing function to the data
+	\**********************************************************************/
+	double *window		= dmgr.asDouble(_window);
+	fftw_complex *input	= dmgr.asFFT(_data);
+
+	for (int i=0; i<_numIQ; i++)
+		{
+		input[i][0] *= window[i];
+		input[i][1] *= window[i];
+		}
+
+	/**********************************************************************\
+	|* Perform the FFT
+	\**********************************************************************/
 	fftw_execute_dft(_plan, dmgr.asFFT(_data), dmgr.asFFT(_results));
 
+	/**********************************************************************\
+	|* And tell the world we're done
+	\**********************************************************************/
 	emit fftDone(_results);
 	}

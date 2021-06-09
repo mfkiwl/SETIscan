@@ -27,6 +27,7 @@ Processor::Processor(Config& cfg, QObject *parent)
 		  ,_work(-1)
 		  ,_fftIn(-1)
 		  ,_fftOut(-1)
+		  ,_window(-1)
 	{
 	// FIXME: Create and use the window data
 
@@ -49,6 +50,8 @@ Processor::~Processor(void)
 		dmgr.release(_fftOut);
 	if (_work >= 0)
 		dmgr.release(_work);
+	if (_window >= 0)
+		dmgr.release(_window);
 	}
 
 /******************************************************************************\
@@ -119,6 +122,7 @@ void Processor::dataReceived(int64_t buffer, int samples, int max, int bytes)
 					_aggregator, &FFTAggregator::fftReady);
 
 			task->setPlan(_fftPlan);
+			task->setWindow(_window);
 			QThreadPool::globalInstance()->start(task);
 
 			}
@@ -151,7 +155,6 @@ void Processor::init(SoapyIO *sio)
 	|* substitute others as long as they are compatible, so allocate these
 	|* in exactly the same way as the ones we will use.
 	\**************************************************************************/
-	LOG << "Creating FFT plan";
 	DataMgr &dmgr		= DataMgr::instance();
 	fftw_complex *in	= dmgr.asFFT(_fftIn);
 	fftw_complex *out	= dmgr.asFFT(_fftOut);
@@ -161,6 +164,8 @@ void Processor::init(SoapyIO *sio)
 										   FFTW_FORWARD,
 										   FFTW_PATIENT);
 	LOG << "FFT plan created";
+
+	_populateWindowData();
 	}
 
 /******************************************************************************\
@@ -181,4 +186,63 @@ void Processor::_allocate(void)
 	if (_fftOut >= 0)
 		dmgr.release(_fftOut);
 	_fftOut	= dmgr.fftBlockFor(_fftSize);
+
+	if (_window >= 0)
+		dmgr.release(_window);
+	_window	= dmgr.blockFor(_fftSize, sizeof(double));
+	}
+
+
+/******************************************************************************\
+|* Set up the buffers
+\******************************************************************************/
+void Processor::_populateWindowData(void)
+	{
+	DataMgr &dmgr		= DataMgr::instance();
+	double *win			= dmgr.asDouble(_window);
+
+	switch (Config::instance().fftWindowType())
+		{
+		case Config::W_RECTANGLE:
+			for (int i=0; i<_fftSize; i++)
+				win[i] = 1.0f;
+			break;
+
+		case Config::W_HAMMING:
+			for (int i=0; i<_fftSize; i++)
+				win[i] = 0.54 - 0.46 * cos (2 * M_PI * i / _fftSize);
+			break;
+
+		case Config::W_HANNING:
+			for (int i=0; i<_fftSize; i++)
+				win[i] = 0.54 - 0.5 * cos (2 * M_PI * i / _fftSize);
+			break;
+
+		case Config::W_BLACKMAN:
+			for (int i=0; i<_fftSize; i++)
+				win[i] = 0.42
+							   - 0.5 * cos (2 * M_PI * i / _fftSize)
+							   + 0.08 * cos (4 * M_PI * i / _fftSize);
+			break;
+
+		case Config::W_WELCH:
+			for (int i=0; i<_fftSize; i++)
+				{
+				double sizep1	= _fftSize + 1;
+				double range	= 2 * i - _fftSize;
+				double step		= range / sizep1;
+				win[i]	=  1 - step * step;
+				}
+			break;
+
+		case Config::W_PARZEN:
+			for (int i=0; i<_fftSize; i++)
+				{
+				double sizep1	= _fftSize + 1;
+				double range	= 2 * i - _fftSize;
+
+				win[i] = 1 - fabs (range / sizep1);
+				}
+			break;
+		}
 	}

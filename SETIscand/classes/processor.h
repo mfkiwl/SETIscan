@@ -29,14 +29,20 @@ class Processor : public QObject
 		fftw_plan		_fftPlan;		// Plan for the FFT
 		int64_t			_fftIn;			// FFTW buffer used during planning
 		int64_t			_fftOut;		// FFTW buffer used during planning
+		int64_t			_window;		// Buffer holding the windowing data
 
 		QThread			_bgThread;		// Background aggregation thread
 		FFTAggregator *	_aggregator;	// Collect data and send it off
 
 		/**********************************************************************\
-		|* Private methods
+		|* Private method: allocate the RAM buffers we need
 		\**********************************************************************/
 		void _allocate(void);
+
+		/**********************************************************************\
+		|* Private method: Populate the windowing data
+		\**********************************************************************/
+		void _populateWindowData(void);
 
 	public:
 		/**********************************************************************\

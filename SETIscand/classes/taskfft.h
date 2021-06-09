@@ -15,10 +15,11 @@ class TaskFFT : public QObject, public QRunnable
 	/**************************************************************************\
 	|* Properties
 	\**************************************************************************/
-	GET(int, numIQ);
-	GET(int64_t, data);
-	GET(int64_t, results);
-	SET(fftw_plan, plan, Plan);
+	GET(int, numIQ);						// Number of IQ points
+	GET(int64_t, data);						// Buffer: Input to FFT
+	GET(int64_t, results);					// Buffer: Output from FFT
+	SET(fftw_plan, plan, Plan);				// FFT plan for fftw3
+	GETSET(int64_t, window, Window);		// Buffer: FFT windowing data
 
 	public:
 		/**********************************************************************\
