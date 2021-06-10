@@ -106,7 +106,9 @@ void FFTAggregator::fftReady(int buffer)
 		memset(_updateData, 0, _fftSize * sizeof(double));
 		_nextUpdate		= _deltaT(_updateSecs);
 		_updatePasses	= 0;
-		fprintf(stderr, "u");
+
+		dmgr.retain(buffer);
+		emit aggregatedDataReady(TYPE_UPDATE, buffer);
 		}
 
 	/**************************************************************************\
@@ -121,7 +123,9 @@ void FFTAggregator::fftReady(int buffer)
 		memset(_sampleData, 0, _fftSize * sizeof(double));
 		_nextSample		= _deltaT(_sampleSecs);
 		_samplePasses	= 0;
-		fprintf(stderr, "S\n");
+
+		dmgr.retain(buffer);
+		emit aggregatedDataReady(TYPE_SAMPLE, buffer);
 		}
 
 	dmgr.release(buffer);

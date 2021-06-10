@@ -20,26 +20,26 @@ class SoapyIO : public QObject
 	{
 	Q_OBJECT
 
-		/**************************************************************************\
-		|* typedefs and enums
-		\**************************************************************************/
-		typedef QMap<QString, QString>		RadioInfo;
-		typedef std::vector<std::string>	StringList;
-		typedef SoapySDR::RangeList			RangeList;
+	/**************************************************************************\
+	|* typedefs and enums
+	\**************************************************************************/
+	typedef QMap<QString, QString>		RadioInfo;
+	typedef std::vector<std::string>	StringList;
+	typedef SoapySDR::RangeList			RangeList;
 
-		/**************************************************************************\
-		|* Properties
-		\**************************************************************************/
-		GET(int, channel);
-		GET(SoapySDR::Device *, dev);
-		GET(StringList, antennas);
-		GET(SoapySDR::Range, gains);
-		GET(RangeList, frequencyRanges);
-		GET(RangeList, sampleRates);
-		GET(int, sampleRate);
-		GET(RangeList, bandwidths);
-		GET(QString, format);
-		GET(int, maxValue);
+	/**************************************************************************\
+	|* Properties
+	\**************************************************************************/
+	GET(int, channel);
+	GET(SoapySDR::Device *, dev);
+	GET(StringList, antennas);
+	GET(SoapySDR::Range, gains);
+	GET(RangeList, frequencyRanges);
+	GET(RangeList, sampleRates);
+	GET(int, sampleRate);
+	GET(RangeList, bandwidths);
+	GET(QString, format);
+	GET(int, maxValue);
 
 	private:
 		/**********************************************************************\

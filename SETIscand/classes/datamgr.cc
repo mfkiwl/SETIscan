@@ -139,6 +139,18 @@ int DataMgr::fftBlockFor(size_t bins)
 
 
 /******************************************************************************\
+|* Return the allocation size of the block
+\******************************************************************************/
+size_t DataMgr::extent(int64_t idx)
+	{
+	QMutexLocker guard(&_lock);
+	size_t extent = 0;
+	if (_active.contains(idx))
+		extent = _active[idx]->size();
+	return extent;
+	}
+
+/******************************************************************************\
 |* Return the pointer to the data in various formats: as uint8_t
 \******************************************************************************/
 uint8_t * DataMgr::asUint8(int64_t idx)

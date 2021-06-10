@@ -6,6 +6,7 @@
 #include "constants.h"
 #include "datamgr.h"
 #include "fftaggregator.h"
+#include "msgio.h"
 #include "processor.h"
 #include "soapyio.h"
 #include "taskfft.h"
@@ -29,10 +30,22 @@ Processor::Processor(Config& cfg, QObject *parent)
 		  ,_fftOut(-1)
 		  ,_window(-1)
 	{
-	// FIXME: Create and use the window data
-
+	/**************************************************************************\
+	|* Use a background thread for data-aggregation
+	\**************************************************************************/
 	_aggregator = new FFTAggregator(this);
 	_aggregator->moveToThread(&_bgThread);
+
+	/**************************************************************************\
+	|* Connect up the aggregator to the MsgIO class
+	\**************************************************************************/
+	MsgIO &mio = MsgIO::instance();
+	connect(_aggregator, &FFTAggregator::aggregatedDataReady,
+			&mio, &MsgIO::newData);
+
+	/**************************************************************************\
+	|* Start the background thread
+	\**************************************************************************/
 	_bgThread.start();
 	}
 

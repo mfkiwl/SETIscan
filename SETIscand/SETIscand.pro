@@ -1,4 +1,5 @@
 QT -= gui
+QT += websockets sql
 
 CONFIG += c++17 console
 CONFIG -= app_bundle
@@ -17,6 +18,7 @@ SOURCES += \
         classes/datablock.cc \
         classes/datamgr.cc \
         classes/fftaggregator.cc \
+        classes/msgio.cc \
         classes/processor.cc \
         classes/soapyio.cc \
         classes/soapyworker.cc \
@@ -43,6 +45,7 @@ HEADERS += \
     classes/datablock.h \
     classes/datamgr.h \
     classes/fftaggregator.h \
+    classes/msgio.h \
     classes/processor.h \
     classes/soapyio.h \
     classes/soapyworker.h \

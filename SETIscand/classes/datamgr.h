@@ -60,6 +60,11 @@ class DataMgr : public Singleton<DataMgr>, public Testable
 		fftw_complex *			asFFT(int64_t idx);
 
 		/**********************************************************************\
+		|* Public Method - return the allocation size of the block or 0
+		\**********************************************************************/
+		size_t extent(int64_t idx);
+
+		/**********************************************************************\
 		|* Public Methods - interface for retain counts from client side
 		\**********************************************************************/
 		int retainCount(uint64_t handle);

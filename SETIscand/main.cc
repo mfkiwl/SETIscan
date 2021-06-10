@@ -3,6 +3,7 @@
 #include "config.h"
 #include "constants.h"
 #include "datamgr.h"
+#include "msgio.h"
 #include "processor.h"
 #include "soapyio.h"
 #include "tester.h"
@@ -33,6 +34,16 @@ int main(int argc, char *argv[])
 	|* Set up the data stream
 	\**************************************************************************/
 	SoapyIO sio(&processor);
+
+	/**************************************************************************\
+	|* Configure the message-io handler (websocket based)
+	\**************************************************************************/
+	QThread networkThread;
+	MsgIO msgio;
+	msgio.init(Config::instance().networkPort());
+
+	msgio.moveToThread(&networkThread);
+	networkThread.start();
 
 	/**************************************************************************\
 	|* Configure the processor

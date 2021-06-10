@@ -36,6 +36,11 @@ class Config : public Singleton<Config>
 		WindowType fftWindowType(void);
 
 		/******************************************************************\
+		|* Return the baseband sample rate to use
+		\******************************************************************/
+		int networkPort(void);
+
+		/******************************************************************\
 		|* Return the time between samples in seconds
 		\******************************************************************/
 		double secondsBetweenSamples(void);

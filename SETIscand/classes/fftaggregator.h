@@ -10,6 +10,17 @@ class FFTAggregator : public QObject
 	{
 	Q_OBJECT
 
+	public:
+		/**********************************************************************\
+		|* Enums and Typedefs
+		\**********************************************************************/
+		typedef enum
+			{
+			TYPE_NONE	= 0,
+			TYPE_UPDATE,
+			TYPE_SAMPLE
+			} DataType;
+
 	/**************************************************************************\
 	|* Properties
 	\**************************************************************************/
@@ -21,6 +32,7 @@ class FFTAggregator : public QObject
 	GET(qint64, nextSample);			// Next time to deliver a sample
 	GET(int, updatePasses);				// Count of update aggregations
 	GET(int, samplePasses);				// Count of sample aggregations
+
 
 	private:
 		/**********************************************************************\
@@ -34,6 +46,12 @@ class FFTAggregator : public QObject
 		|* Private methods
 		\**********************************************************************/
 		qint64 _deltaT(double delta);
+
+	signals:
+		/**********************************************************************\
+		|* Tell the world we have new data it might want to use
+		\**********************************************************************/
+		void aggregatedDataReady(DataType type, int buffer);
 
 	public:
 		/**********************************************************************\

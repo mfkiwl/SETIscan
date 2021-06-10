@@ -9,6 +9,7 @@
 \******************************************************************************/
 #define RADIO_GROUP			"radio"
 #define DSP_GROUP			"dsp"
+#define NETWORK_GROUP		"network"
 
 #define DRIVER_KEY			"filter-driver"
 #define MODEL_KEY			"filter-model"
@@ -25,6 +26,8 @@
 #define SAMPLE_TIME_KEY		"fft-sample-time"
 
 #define DEFAULT_FFT_SIZE	"1024"
+
+#define NET_PORT_KEY		"network-port"
 
 /******************************************************************************\
 |* These are the commandline args we're managing
@@ -57,6 +60,9 @@ Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 		_gain,
 		({"g", "gain"}, "Gain to apply"))
+Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
+		_networkPort,
+		({"p", "network-port"}, "Network port to communicate over", "5417"))
 Q_GLOBAL_STATIC_WITH_ARGS(const QCommandLineOption,
 		_sampleRate,
 		({"s", "sample-rate"}, "Baseband Sample rate", "2048000"))
@@ -118,6 +124,7 @@ Config::Config()
 	_parser.addOption(*_listNativeFormat);
 	_parser.addOption(*_listSampleRates);
 	_parser.addOption(*_modeFilter);
+	_parser.addOption(*_networkPort);
 	_parser.addOption(*_sampleRate);
 	_parser.addOption(*_timeSample);
 	_parser.addOption(*_timeUpdate);
@@ -188,6 +195,21 @@ QString Config::radioModeFilter(void)
 	QString filter = s.value(MODEL_KEY, "").toString().toLower();
 	s.endGroup();
 	return filter;
+	}
+
+/******************************************************************************\
+|* Get the id filter
+\******************************************************************************/
+int Config::networkPort(void)
+	{
+	if (_parser.isSet(*_networkPort))
+		return _parser.value(*_networkPort).toInt();
+
+	QSettings s;
+	s.beginGroup(NETWORK_GROUP);
+	QString port = s.value(NET_PORT_KEY, "5417").toString();
+	s.endGroup();
+	return port.toInt();
 	}
 
 /******************************************************************************\
